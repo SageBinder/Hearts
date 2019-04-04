@@ -1,6 +1,8 @@
 apply plugin: "java"
 
-sourceCompatibility = 1.6
+//sourceCompatibility = 1.6
+compileJava.options.fork = true
+compileJava.options.forkOptions.executable = "C:\\Program Files\\Java\\jdk-11.0.1\\bin\\javac.exe"
 sourceSets.main.java.srcDirs = [ "src/" ]
 
 project.ext.mainClassName = "com.sage.hearts.desktop.DesktopLauncher"
@@ -15,11 +17,11 @@ task run(dependsOn: classes, type: JavaExec) {
 }
 
 task dist(type: Jar) {
-    from files(sourceSets.main.output.classesDir)
+    from files(sourceSets.main.output.classesDirs)
     from files(sourceSets.main.output.resourcesDir)
     from {configurations.compile.collect {zipTree(it)}}
     from files(project.assetsDir);
- 
+
     manifest {
         attributes 'Main-Class': project.mainClassName
     }

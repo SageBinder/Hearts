@@ -3,7 +3,6 @@ package com.sage.hearts.client;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.gwt.GwtApplication;
 import com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration;
-import com.sage.hearts.Hearts;
 
 public class HtmlLauncher extends GwtApplication {
 

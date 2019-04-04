@@ -8,5 +8,5 @@
 	<inherits name='Hearts' />
 	<entry-point class='com.sage.hearts.client.HtmlLauncher' />
 	
-	<set-configuration-property name="gdx.assetpath" value="../core/assets" />
+	<set-configuration-property name="gdx.assetpath" rankNum="../core/assets" />
 </module>

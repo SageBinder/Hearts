@@ -35,6 +35,8 @@ allprojects {
 project(":desktop") {
     apply plugin: "java"
 
+    compileJava.options.fork = true
+    compileJava.options.forkOptions.executable = "C:\\Program Files\\Java\\jdk-11.0.1\\bin\\javac.exe"
 
     dependencies {
         compile project(":core")
@@ -63,6 +65,8 @@ project(":html") {
 project(":core") {
     apply plugin: "java"
 
+    compileJava.options.fork = true
+    compileJava.options.forkOptions.executable = "C:\\Program Files\\Java\\jdk-11.0.1\\bin\\javac.exe"
 
     dependencies {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
