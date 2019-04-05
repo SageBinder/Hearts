@@ -54,7 +54,7 @@ class StartScreen implements Screen {
         viewport.update(width, height, true);
         test.getEntity()
                 .setPosition(viewport.getWorldWidth() / 2, viewport.getWorldHeight() / 2)
-                .setHeight(viewport.getWorldHeight() / 3);
+                .setHeight(viewport.getWorldHeight() / 20);
     }
 
     @Override

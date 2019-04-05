@@ -18,7 +18,7 @@ public class RenderableCardGroup<T extends Card & RenderableCard> extends Render
         super();
     }
 
-    public RenderableCardGroup(RenderableCardList<T> other) {
+    public <T1 extends RenderableCardList<T>> RenderableCardGroup(T1 other) {
         super(other);
     }
 

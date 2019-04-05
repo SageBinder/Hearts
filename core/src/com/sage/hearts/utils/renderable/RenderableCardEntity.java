@@ -18,7 +18,7 @@ import com.sage.hearts.utils.card.Suit;
 import java.util.HashMap;
 
 @SuppressWarnings({"unchecked", "WeakerAccess", "unused", "UnusedReturnValue"})
-public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Card> {
+public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends Card> {
     public static final int CARD_HEIGHT_IN_PIXELS = 350;
     public static final int CARD_WIDTH_IN_PIXELS = 225;
     public static final float HEIGHT_TO_WIDTH_RATIO = (float)CARD_HEIGHT_IN_PIXELS / (float)CARD_WIDTH_IN_PIXELS;
@@ -85,11 +85,11 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
 
     private boolean moveDisplayWithBase = true;
 
-    private boolean faceUp = true;
-    private boolean isSelected = false;
-
     private boolean selectable = true;
     private boolean flippable = true;
+
+    private boolean faceUp = true;
+    private boolean isSelected = false;
 
     // Render variables:
     private static FileHandle defaultSpriteFolder = Gdx.files.internal("playing_cards/");
@@ -101,10 +101,10 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
     private Sprite thisCardBackSprite = null;
     private Sprite thisCardFaceSprite = null;
 
-    // Other:
-    public final CT card;
+    // Card accessor:
+    public final CardT card;
 
-    public RenderableCardEntity(CT other) {
+    public RenderableCardEntity(CardT other) {
         card = other;
     }
 
@@ -257,6 +257,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
     }
 
     // General value setters:
+    //      Colors:
     public T setBothBackgroundColors(Color newColor) {
         setFaceBackgroundColor(newColor);
         setBackBackgroundColor(newColor);
@@ -281,6 +282,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         return (T) this;
     }
 
+    //      Corner radius:
     public T setCornerRadiusRelativeToWidth(float scale) {
         cornerRadiusInPixels = (int)(scale * CARD_WIDTH_IN_PIXELS);
         invalidateSprites();
@@ -293,6 +295,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         return (T) this;
     }
 
+    //      Size/position:
     public T scale(float newScale) {
         setWidth(getWidth() * newScale);
         return (T) this;
@@ -352,6 +355,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         return (T) this;
     }
 
+    //      Display size/position:
     public T setDisplayPosition(Vector2 newPosition) {
         return setDisplayPosition(newPosition.x, newPosition.y);
     }
@@ -393,6 +397,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         return (T) this;
     }
 
+    //      Selectable/Flippable
     public T select() {
         setSelected(true);
         return (T) this;
@@ -427,7 +432,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
     }
 
     public T setSelectable(boolean selectable) {
-        if(!selectable) setSelected(false);
         this.selectable = selectable;
         return (T) this;
     }
@@ -438,21 +442,16 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
     }
 
     public T setFaceUp(boolean faceUp) {
-        if(flippable) {
-            this.faceUp = faceUp;
-        }
+        if(flippable) this.faceUp = faceUp;
         return (T) this;
     }
 
     public T flip() {
-        if(flippable) {
-            faceUp = !faceUp;
-        }
+        setFaceUp(!faceUp);
         return (T) this;
     }
 
     public T setFlippable(boolean flippable) {
-        if(!flippable) setFaceUp(true);
         this.flippable = flippable;
         return (T) this;
     }
@@ -505,8 +504,14 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
     }
 
     // General value getters:
+    //      Corner radius:
     public int getCornerRadiusInPixels() {
         return cornerRadiusInPixels;
+    }
+
+    //      Size/position:
+    public Vector2 getPosition() {
+        return baseCardRect.getPosition(new Vector2());
     }
 
     public float getX() {
@@ -525,6 +530,11 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         return baseCardRect.width;
     }
 
+    //      Display size/position:
+    public Vector2 getDisplayPosition() {
+        return displayCardRect.getPosition(new Vector2());
+    }
+
     public float getDisplayX() {
         return displayCardRect.x;
     }
@@ -541,10 +551,11 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         return displayCardRect.height;
     }
 
-    public Vector2 getPosition() {
-        return baseCardRect.getPosition(new Vector2());
+    public boolean getMoveDisplayWithBase() {
+        return moveDisplayWithBase;
     }
 
+    //      Selectable/flippable:
     public boolean isSelected() {
         return isSelected;
     }
@@ -562,6 +573,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
     }
 
     // --- RENDER LOGIC ---
+    // Pixmap/sprite methods:
     public static void setSpriteFolder(FileHandle newSpriteFolder) {
         spriteFolder = newSpriteFolder;
         resetPixmaps();
@@ -604,20 +616,22 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
 
     private static void loadFaceDesignPixmapForCard(int cardNum) {
         String cardImageName;
+        if(Card.isJoker(cardNum)) {
+            cardImageName = Rank.fromCardNum(cardNum).toString();
+            cardImageName += ".png";
+        } else {
+            cardImageName = Rank.fromCardNum(cardNum).toString() + "_of_" + Suit.fromCardNum(cardNum).toString();
+            cardImageName += ".png";
+        }
+        Pixmap originalImagePixmap =
+                new Pixmap(spriteFolder.child(cardImageName));
+        Pixmap resizedImagePixmap =
+                new Pixmap(CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS, originalImagePixmap.getFormat());
 
-        Suit suit = Card.getSuitFromCardNum(cardNum);
-        Rank rank = Card.getRankFromCardNum(cardNum);
-
-        cardImageName = rank.toString() + "_of_" + suit.toString() + ".png";
-
-        Pixmap originalImagePixmap = new Pixmap(spriteFolder.child(cardImageName));
-        Pixmap resizedImagePixmap = new Pixmap(CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS, originalImagePixmap.getFormat());
         resizedImagePixmap.drawPixmap(originalImagePixmap,
                 0, 0, originalImagePixmap.getWidth(), originalImagePixmap.getHeight(),
                 0, 0, resizedImagePixmap.getWidth(), resizedImagePixmap.getHeight());
-
         faceDesignPixmaps.put(cardNum, resizedImagePixmap);
-
         originalImagePixmap.dispose();
     }
 
@@ -626,7 +640,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         int pixmapWidth = pixmap.getWidth();
 
         Pixmap.setBlending(Pixmap.Blending.None);
-
         // These loops create the rounded rectangle pixmap by adding transparent pixels at the corners
         for(int x = 0; x < pixmapWidth; x++) {
             nextIter:
@@ -665,17 +678,18 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         Pixmap.setBlending(Pixmap.Blending.None);
         pixmap.setColor(color);
 
-        // Left border
-        pixmap.fillRectangle(0, radius, borderThickness, pixmapHeight - (2 * radius));
-
-        // Right border
-        pixmap.fillRectangle(pixmapWidth - borderThickness, radius, borderThickness, pixmapHeight - (2 * radius));
-
-        // Top border
-        pixmap.fillRectangle(radius, 0, pixmapWidth - (2 * radius), borderThickness);
-
-        // Bottom border
-        pixmap.fillRectangle(radius, pixmapHeight - borderThickness, pixmapWidth - (2 * radius), borderThickness);
+        // Left border:
+        pixmap.fillRectangle(
+                0, radius, borderThickness, pixmapHeight - (2 * radius));
+        // Right border:
+        pixmap.fillRectangle(
+                pixmapWidth - borderThickness, radius, borderThickness, pixmapHeight - (2 * radius));
+        // Top border:
+        pixmap.fillRectangle(
+                radius, 0, pixmapWidth - (2 * radius), borderThickness);
+        // Bottom border:
+        pixmap.fillRectangle(
+                radius, pixmapHeight - borderThickness, pixmapWidth - (2 * radius), borderThickness);
 
         // This code is almost the exact same as the code in roundPixmapCorners()
         for(int x = 0; x < pixmapWidth; x++) {
@@ -713,8 +727,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         if(faceDesignPixmaps.get(card.cardNum) == null) {
             loadFaceDesignPixmapForCard(card.cardNum);
         }
-        thisCardFaceSprite = setupSpriteFromPixmap(faceDesignPixmaps.get(card.cardNum),
-                getFaceBackgroundColor(),
+        thisCardFaceSprite = setupSpriteFromPixmap(
+                faceDesignPixmaps.get(card.cardNum), getFaceBackgroundColor(),
                 getFaceDesignWidthScale(), getFaceDesignHeightScale(),
                 getFaceBorderThicknessInPixels(), getFaceBorderColor());
     }
@@ -723,7 +737,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
         if(backPixmap == null) {
             loadBackPixmap();
         }
-        thisCardBackSprite = setupSpriteFromPixmap(backPixmap, getBackBackgroundColor(),
+        thisCardBackSprite = setupSpriteFromPixmap(
+                backPixmap, getBackBackgroundColor(),
                 getBackDesignWidthScale(), getBackDesignHeightScale(),
                 getBackBorderThicknessInPixels(), getBackBorderColor());
     }
@@ -733,32 +748,41 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
                                          float designWidthScale, float designHeightScale,
                                          int borderThicknessInPixels, Color borderColor) {
         Pixmap spritePixmap = new Pixmap(designPixmap.getWidth(), designPixmap.getHeight(), designPixmap.getFormat());
-
         Pixmap.setBlending(Pixmap.Blending.SourceOver);
         spritePixmap.setColor(backgroundColor);
         spritePixmap.fill();
-
         spritePixmap.drawPixmap(designPixmap,
                 0, 0, designPixmap.getWidth(), designPixmap.getHeight(),
-                (int) (0.5f * (CARD_WIDTH_IN_PIXELS - (CARD_WIDTH_IN_PIXELS * designWidthScale))), (int) (0.5f * (CARD_HEIGHT_IN_PIXELS - (CARD_HEIGHT_IN_PIXELS * designHeightScale))),
-                (int) (CARD_WIDTH_IN_PIXELS * designWidthScale), (int) (CARD_HEIGHT_IN_PIXELS * designHeightScale));
-
+                (int)(0.5f * (CARD_WIDTH_IN_PIXELS - (CARD_WIDTH_IN_PIXELS * designWidthScale))),     // dstx
+                (int)(0.5f * (CARD_HEIGHT_IN_PIXELS - (CARD_HEIGHT_IN_PIXELS * designHeightScale))),  // dsty
+                (int)(CARD_WIDTH_IN_PIXELS * designWidthScale),                                       // dstWidth
+                (int)(CARD_HEIGHT_IN_PIXELS * designHeightScale));                                    // dstHeight
         roundPixmapCorners(spritePixmap, getCornerRadiusInPixels());
         drawCurvedBorderOnPixmap(spritePixmap,
                 getCornerRadiusInPixels(),
                 borderThicknessInPixels,
                 borderColor);
 
-        Texture spriteTexture = new Texture(spritePixmap);
-
-        Sprite sprite = new Sprite(spriteTexture);
+        Sprite sprite = new Sprite(new Texture(spritePixmap));
         sprite.getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         sprite.setSize(getWidth(), getHeight());
-
         spritePixmap.dispose();
         return sprite;
     }
 
+    void invalidateSprites() {
+        if(thisCardFaceSprite != null) {
+            thisCardFaceSprite.getTexture().dispose();
+        }
+        thisCardFaceSprite = null;
+
+        if(thisCardBackSprite != null) {
+            thisCardBackSprite.getTexture().dispose();
+        }
+        thisCardBackSprite = null;
+    }
+
+    // Render methods:
     public void render(SpriteBatch batch, Viewport viewport) {
         renderAt(batch, viewport, getDisplayX(), getDisplayY(), getDisplayWidth(), getDisplayHeight());
     }
@@ -815,17 +839,5 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CT extends Car
 
         sprite.setBounds(vecXY.x, vecXY.y, width, height);
         sprite.draw(batch);
-    }
-
-    void invalidateSprites() {
-        if(thisCardFaceSprite != null) {
-            thisCardFaceSprite.getTexture().dispose();
-        }
-        thisCardFaceSprite = null;
-
-        if(thisCardBackSprite != null) {
-            thisCardBackSprite.getTexture().dispose();
-        }
-        thisCardBackSprite = null;
     }
 }

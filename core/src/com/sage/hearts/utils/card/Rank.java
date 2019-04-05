@@ -13,13 +13,27 @@ public enum Rank {
     JACK("jack", 11),
     QUEEN("queen", 12),
     KING("king", 13),
-    ACE("ace", 14);
+    ACE("ace", 14),
+    SMALL_JOKER("small_joker", 15),
+    BIG_JOKER("big_joker", 16);
 
-    final String stringName;
-    final int rankNum;
+    public final String stringName;
+    public final int rankNum;
 
     Rank(String name, int rankNum) {
         this.stringName = name;
         this.rankNum = rankNum;
+    }
+
+    public static Rank fromCardNum(int cardNum) throws InvalidCardException {
+        if(cardNum > 53) throw new InvalidCardException();
+        return cardNum == 53 ? BIG_JOKER
+                : cardNum == 52 ? SMALL_JOKER
+                : Rank.values()[cardNum / 4];
+    }
+
+    @Override
+    public String toString() {
+        return stringName;
     }
 }
