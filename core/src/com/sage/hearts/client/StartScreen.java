@@ -1,6 +1,7 @@
 package com.sage.hearts.client;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -8,8 +9,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.sage.hearts.utils.card.Card;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
+import com.sage.hearts.utils.renderable.RenderableCard;
 import com.sage.hearts.utils.renderable.RenderableCardEntity;
 import com.sage.hearts.utils.renderable.RenderableCardList;
 
@@ -49,15 +52,15 @@ class StartScreen implements Screen, InputProcessor {
                 Hearts.BACKGROUND_COLOR.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        test.entity().rotateDeg(delta * 360 / 10);
-        cards.forEach(c -> c.entity().rotateDeg(delta * 720));
+//        test.entity().rotateDeg(delta * 360 / 10);
+//        cards.forEach(c -> c.entity().rotateDeg(delta * 720));
 
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
         batch.begin();
-        test.render(batch, viewport);
         cards.render(batch, viewport);
+        test.render(batch, viewport);
         batch.end();
     }
 
@@ -104,18 +107,36 @@ class StartScreen implements Screen, InputProcessor {
         return false;
     }
 
-    int counter = 0;
+    int counter = 1;
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         var worldPos = viewport.unproject(new Vector2(screenX, screenY));
-        test.setPosition(worldPos.x - (test.getWidth() / 2f), worldPos.y - (test.getHeight() / 2f));
+        if(button == Input.Buttons.LEFT) {
+            test.setPosition(worldPos.x - (test.getWidth() / 2f), worldPos.y - (test.getHeight() / 2f));
 
-        var toAdd = new RenderableHeartsCard(counter++);
-        counter %= 54;
-        toAdd.entity()
-                .setWidth(viewport.getWorldHeight() / 10)
-                .setPosition(worldPos);
-        cards.add(toAdd);
+            var toAdd = new RenderableHeartsCard((counter += 2) % 54);
+            counter %= 54;
+            toAdd.entity()
+                    .setWidth(viewport.getWorldHeight() / 10)
+                    .setPosition(worldPos.x - (toAdd.getWidth() / 2), worldPos.y - (toAdd.getHeight() / 2))
+                    .setOriginProportion(0.5f, 0.5f);
+            cards.add(toAdd);
+        } else if(button == Input.Buttons.RIGHT) {
+            for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
+                if(i.previous().entity().displayRectContainsPoint(worldPos)) {
+                    i.remove();
+                    break;
+                }
+            }
+        } else if(button == Input.Buttons.MIDDLE) {
+            for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
+                var ce = i.previous().entity;
+                if(ce.displayRectContainsPoint(worldPos)) {
+                    ce.toggleSelected();
+                    break;
+                }
+            }
+        }
         return false;
     }
 

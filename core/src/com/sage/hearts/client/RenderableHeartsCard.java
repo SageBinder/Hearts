@@ -10,7 +10,7 @@ import com.sage.hearts.utils.renderable.RenderableCardEntity;
 
 class RenderableHeartsCard extends HeartsCard
         implements RenderableCard<RenderableHeartsCard.RenderableHeartsCardEntity> {
-    private final RenderableHeartsCardEntity entity = new RenderableHeartsCardEntity(this);
+    final RenderableHeartsCardEntity entity = new RenderableHeartsCardEntity(this);
 
     RenderableHeartsCard(Rank rank, Suit suit) throws InvalidCardException {
         super(rank, suit);
@@ -39,6 +39,8 @@ class RenderableHeartsCard extends HeartsCard
         private RenderableHeartsCardEntity(RenderableHeartsCard other) {
             super(other);
             if(card.pointValue > 0) {
+                super.defaultFaceBorderColor.set(defaultPointCardFaceBorderColor);
+                super.defaultBackBorderColor.set(defaultPointCardBackBorderColor);
                 setFaceBorderColor(defaultPointCardFaceBorderColor);
                 setBackBorderColor(defaultPointCardBackBorderColor);
             }
