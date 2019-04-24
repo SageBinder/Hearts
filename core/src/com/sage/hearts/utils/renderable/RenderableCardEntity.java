@@ -639,7 +639,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         int pixmapHeight = pixmap.getHeight();
         int pixmapWidth = pixmap.getWidth();
 
-        Pixmap.setBlending(Pixmap.Blending.None);
+        pixmap.setBlending(Pixmap.Blending.None);
         // These loops create the rounded rectangle pixmap by adding transparent pixels at the corners
         for(int x = 0; x < pixmapWidth; x++) {
             nextIter:
@@ -675,7 +675,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         int pixmapHeight = pixmap.getHeight();
         int pixmapWidth = pixmap.getWidth();
 
-        Pixmap.setBlending(Pixmap.Blending.None);
+        pixmap.setBlending(Pixmap.Blending.None);
         pixmap.setColor(color);
 
         // Left border:
@@ -748,7 +748,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                                          float designWidthScale, float designHeightScale,
                                          int borderThicknessInPixels, Color borderColor) {
         Pixmap spritePixmap = new Pixmap(designPixmap.getWidth(), designPixmap.getHeight(), designPixmap.getFormat());
-        Pixmap.setBlending(Pixmap.Blending.SourceOver);
+        spritePixmap.setBlending(Pixmap.Blending.SourceOver);
         spritePixmap.setColor(backgroundColor);
         spritePixmap.fill();
         spritePixmap.drawPixmap(designPixmap,
