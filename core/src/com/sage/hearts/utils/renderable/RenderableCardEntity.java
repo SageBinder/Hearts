@@ -8,19 +8,19 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.utils.card.Card;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 @SuppressWarnings({"unchecked", "WeakerAccess", "unused", "UnusedReturnValue"})
 public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends Card> {
-    public static final int CARD_HEIGHT_IN_PIXELS = 350;
-    public static final int CARD_WIDTH_IN_PIXELS = 225;
+    public static final int CARD_HEIGHT_IN_PIXELS = 950;
+    public static final int CARD_WIDTH_IN_PIXELS = 650;
     public static final float HEIGHT_TO_WIDTH_RATIO = (float)CARD_HEIGHT_IN_PIXELS / (float)CARD_WIDTH_IN_PIXELS;
     public static final float WIDTH_TO_HEIGHT_RATIO = (float)CARD_WIDTH_IN_PIXELS / (float)CARD_HEIGHT_IN_PIXELS;
 
@@ -79,15 +79,17 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     public final Color faceHighlightedBackgroundColor = new Color(defaultFaceHighlightedBackgroundColor);
     public final Color backHighlightedBackgroundColor = new Color(defaultBackHighlightedBackgroundColor);
 
-    // baseCardRect represents overall rectangle before rounding corners
-    private final Rectangle baseCardRect = new Rectangle(0, 0, CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS);
-    private final Rectangle displayCardRect = new Rectangle(baseCardRect);
-
-    private boolean moveDisplayWithBase = true;
+    // baseRect represents overall rectangle before rounding corners
+    private final CardPolygon baseRect = new CardPolygon(CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS);
+    private final CardPolygon displayRect = new CardPolygon(CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS);
+    
+    private float displayXOffset = 0;
+    private float displayYOffset = 0;
+    private float displayProportion = 1f;
+    private float displayRotationOffset = 0;
 
     private boolean selectable = true;
     private boolean flippable = true;
-
     private boolean faceUp = true;
     private boolean isSelected = false;
 
@@ -106,6 +108,40 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
 
     public RenderableCardEntity(CardT other) {
         card = other;
+        baseRect.setPosition(0, 0);
+        displayRect.setPosition(0, 0);
+    }
+
+    private void setDisplayRect() {
+        setDisplayPosition();
+        setDisplayWidth();
+        setDisplayHeight();
+        setDisplayRotation();
+    }
+
+    private void setDisplayPosition() {
+        setDisplayX();
+        setDisplayY();
+    }
+
+    private void setDisplayX() {
+        displayRect.setX(baseRect.getX() + displayXOffset);
+    }
+
+    private void setDisplayY() {
+        displayRect.setY(baseRect.getY() + displayYOffset);
+    }
+
+    private void setDisplayWidth() {
+        displayRect.setWidth(baseRect.getWidth() * displayProportion);
+    }
+
+    private void setDisplayHeight() {
+        displayRect.setHeight(baseRect.getHeight() * displayProportion);
+    }
+
+    private void setDisplayRotation() {
+        displayRect.setRotation(baseRect.getRotation() + displayRotationOffset);
     }
 
     public boolean baseRectContainsPoint(Vector2 point) {
@@ -113,7 +149,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     public boolean baseRectContainsPoint(float x, float y) {
-        return baseCardRect.contains(x, y);
+        return baseRect.contains(x, y);
     }
 
     public boolean displayRectContainsPoint(Vector2 point) {
@@ -121,15 +157,15 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     public boolean displayRectContainsPoint(float x, float y) {
-        return displayCardRect.contains(x, y);
+        return displayRect.contains(x, y);
     }
 
     public boolean displayRectEqualsBaseRect() {
-        return displayCardRect.equals(baseCardRect);
+        return Arrays.equals(baseRect.getTransformedVertices(), displayRect.getTransformedVertices());
     }
 
     // --- SETTERS ---
-    // Face value setters:
+        // --- FACE SETTERS ---:
     public T setFaceDesignScale(float scale) {
         faceDesignHeightScale = scale;
         faceDesignWidthScale = scale;
@@ -193,7 +229,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T) this;
     }
 
-    // Back value setters:
+        // --- BACK SETTERS ---:
     public T setBackDesignScale(float scale) {
         backDesignHeightScale = scale;
         backDesignWidthScale = scale;
@@ -256,8 +292,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T) this;
     }
 
-    // General value setters:
-    //      Colors:
+        // --- GENERAL SETTERS ---:
+        // Colors:
     public T setBothBackgroundColors(Color newColor) {
         setFaceBackgroundColor(newColor);
         setBackBackgroundColor(newColor);
@@ -282,7 +318,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T) this;
     }
 
-    //      Corner radius:
+        // Corner radius:
     public T setCornerRadiusRelativeToWidth(float scale) {
         cornerRadiusInPixels = (int)(scale * CARD_WIDTH_IN_PIXELS);
         invalidateSprites();
@@ -295,7 +331,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T) this;
     }
 
-    //      Size/position:
+        // Size/position:
     public T scale(float newScale) {
         setWidth(getWidth() * newScale);
         return (T) this;
@@ -312,92 +348,128 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     public T setX(float x) {
-        float change = x - baseCardRect.x;
-        baseCardRect.x += change;
-        if(moveDisplayWithBase) displayCardRect.x += change;
-
+        baseRect.setX(x);
+        setDisplayX();
         return (T) this;
     }
 
     public T setY(float y) {
-        float change = y - baseCardRect.y;
-        baseCardRect.y += change;
-        if(moveDisplayWithBase) displayCardRect.y += change;
-
+        baseRect.setY(y);
+        setDisplayY();
         return (T) this;
     }
 
     public T setWidth(float width) {
-        float widthChangeProportion = width / baseCardRect.width;
-
-        baseCardRect.width *= widthChangeProportion;
-        baseCardRect.height = HEIGHT_TO_WIDTH_RATIO * baseCardRect.width;
-
-        if(moveDisplayWithBase) {
-            displayCardRect.width *= widthChangeProportion;
-            displayCardRect.height = HEIGHT_TO_WIDTH_RATIO * displayCardRect.width;
-        }
-
+        baseRect.setWidth(width);
+        baseRect.setHeight(HEIGHT_TO_WIDTH_RATIO * width);
+        setDisplayWidth();
+        setDisplayHeight();
         return (T) this;
     }
 
     public T setHeight(float height) {
-        float heightChangeProportion = height / baseCardRect.height;
-
-        baseCardRect.height *= heightChangeProportion;
-        baseCardRect.width = WIDTH_TO_HEIGHT_RATIO * baseCardRect.height;
-
-        if(moveDisplayWithBase) {
-            displayCardRect.height *= heightChangeProportion;
-            displayCardRect.width = WIDTH_TO_HEIGHT_RATIO * displayCardRect.height;
-        }
-
+        baseRect.setHeight(height);
+        baseRect.setWidth(WIDTH_TO_HEIGHT_RATIO * height);
+        setDisplayHeight();
+        setDisplayWidth();
         return (T) this;
     }
 
-    //      Display size/position:
-    public T setDisplayPosition(Vector2 newPosition) {
-        return setDisplayPosition(newPosition.x, newPosition.y);
-    }
-
-    public T setDisplayPosition(float x, float y) {
-        displayCardRect.setPosition(x, y);
+    public T setRotationDeg(float deg) {
+        baseRect.setRotation(deg);
+        setDisplayRotation();
         return (T) this;
     }
 
-    public T setDisplayX(float x) {
-        displayCardRect.x = x;
+    public T setRotationRad(float rad) {
+        return setRotationDeg(MathUtils.radDeg * rad);
+    }
+
+    public T rotateDeg(float deg) {
+        return setRotationDeg(baseRect.getRotation() + deg);
+    }
+
+    public T rotateRad(float rad) {
+        return setRotationDeg(baseRect.getRotation() + (MathUtils.radDeg * rad));
+    }
+
+    public T setOriginXProportion(float originXProportion) {
+        baseRect.setOriginXProportion(originXProportion);
+        displayRect.setOriginXProportion(originXProportion);
         return (T) this;
     }
 
-    public T setDisplayY(float y) {
-        displayCardRect.y = y;
+    public T setOriginYProportion(float originYProportion) {
+        baseRect.setOriginYProportion(originYProportion);
+        displayRect.setOriginYProportion(originYProportion);
         return (T) this;
     }
 
-    public T setDisplayWidth(float width) {
-        displayCardRect.width = width;
-        displayCardRect.height = HEIGHT_TO_WIDTH_RATIO * width;
+    public T setOriginProportion(float originProportionX, float originProportionY) {
+        baseRect.setOriginProportion(originProportionX, originProportionY);
+        displayRect.setOriginProportion(originProportionX, originProportionY);
         return (T) this;
     }
 
-    public T setDisplayHeight(float height) {
-        displayCardRect.height = height;
-        displayCardRect.width = WIDTH_TO_HEIGHT_RATIO * height;
+    public T setOriginToCenter() {
+        baseRect.setOriginToCenter();
+        displayRect.setOriginToCenter();
         return (T) this;
     }
 
-    public T setMoveDisplayWithBase(boolean moveDisplayWithBase) {
-        this.moveDisplayWithBase = moveDisplayWithBase;
+    public T resetOrigin() {
+        baseRect.resetOrigin();
+        displayRect.resetOrigin();
         return (T) this;
     }
 
-    public T resetDisplayRect() {
-        displayCardRect.set(baseCardRect);
+        // Display offsets:
+    public T setDisplayOffset(float x, float y) {
+        setDisplayXOffset(x);
+        setDisplayYOffset(y);
         return (T) this;
     }
 
-    //      Selectable/Flippable
+    public T setDisplayXOffset(float displayXOffset) {
+        this.displayXOffset = displayXOffset;
+        setDisplayX();
+        return (T) this;
+    }
+
+    public T setDisplayYOffset(float displayYOffset) {
+        this.displayYOffset = displayYOffset;
+        setDisplayY();
+        return (T) this;
+    }
+
+    public T setDisplayProportion(float displayProportion) {
+        this.displayProportion = displayProportion;
+        setDisplayWidth();
+        setDisplayHeight();
+        return (T) this;
+    }
+
+    public T setDisplayRotationOffsetDeg(float displayRotationOffsetDeg) {
+        this.displayRotationOffset = displayRotationOffsetDeg;
+        setDisplayRotation();
+        return (T) this;
+    }
+
+    public T setDisplayRotationOffsetRad(float displayRotationOffsetRad) {
+        setDisplayRotationOffsetDeg(MathUtils.radDeg * displayRotationOffsetRad);
+        return (T) this;
+    }
+
+    public T resetDisplayOffsets() {
+        displayXOffset = 0;
+        displayYOffset = 0;
+        displayProportion = 1f;
+        displayRotationOffset = 0;
+        setDisplayRect();
+        return (T) this;
+    }
+
+        // Selectable/Flippable
     public T select() {
         setSelected(true);
         return (T) this;
@@ -415,20 +487,19 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     public T setSelected(boolean selected) {
         if(isSelected == selected || !selectable) {
             return (T) this;
-        }
-        isSelected = selected;
-
-        if(isSelected) {
-            setFaceBackgroundColor(faceSelectedBackgroundColor);
-            setBackBackgroundColor(backSelectedBackgroundColor);
-            setDisplayPosition(baseCardRect.x, baseCardRect.y + (heightChangeOnSelect * baseCardRect.height));
         } else {
-            setBackBackgroundColor(backUnselectedBackgroundColor);
-            setFaceBackgroundColor(faceUnselectedBackgroundColor);
-            resetDisplayRect();
+            isSelected = selected;
+            if(isSelected) {
+                setFaceBackgroundColor(faceSelectedBackgroundColor);
+                setBackBackgroundColor(backSelectedBackgroundColor);
+                setDisplayYOffset(heightChangeOnSelect * baseRect.getHeight());
+            } else {
+                setBackBackgroundColor(backUnselectedBackgroundColor);
+                setFaceBackgroundColor(faceUnselectedBackgroundColor);
+                resetDisplayOffsets();
+            }
+            return (T) this;
         }
-
-        return (T) this;
     }
 
     public T setSelectable(boolean selectable) {
@@ -457,7 +528,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     // --- GETTERS ---
-    // Face value getters:
+        // --- FACE GETTERS ---:
     public Color getFaceBackgroundColor() {
         return new Color(this.faceBackgroundColor);
     }
@@ -482,7 +553,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return faceDesignWidthScale;
     }
 
-    // Back value getters:
+        // --- BACK GETTERS ---:
     public float getBackDesignHeightScale() {
         return backDesignHeightScale;
     }
@@ -503,59 +574,88 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return new Color(backBackgroundColor);
     }
 
-    // General value getters:
-    //      Corner radius:
+        // --- GENERAL GETTERS ---:
+        // Corner radius:
     public int getCornerRadiusInPixels() {
         return cornerRadiusInPixels;
     }
 
-    //      Size/position:
+        // Base size/position:
     public Vector2 getPosition() {
-        return baseCardRect.getPosition(new Vector2());
+        return new Vector2(baseRect.getX(), baseRect.getY());
     }
 
     public float getX() {
-        return baseCardRect.x;
+        return baseRect.getX();
     }
 
     public float getY() {
-        return baseCardRect.y;
-    }
-
-    public float getHeight() {
-        return baseCardRect.height;
+        return baseRect.getY();
     }
 
     public float getWidth() {
-        return baseCardRect.width;
+        return baseRect.getWidth();
     }
 
-    //      Display size/position:
+    public float getHeight() {
+        return baseRect.getHeight();
+    }
+
+    public float getRotation() {
+        return baseRect.getRotation();
+    }
+
+    public float getOriginXProportion() {
+        return baseRect.getOriginXProportion();
+    }
+
+    public float getOriginYProportion() {
+        return baseRect.getOriginYProportion();
+    }
+
+        // Display size/position:
     public Vector2 getDisplayPosition() {
-        return displayCardRect.getPosition(new Vector2());
+        return new Vector2(displayRect.getX(), displayRect.getY());
     }
 
     public float getDisplayX() {
-        return displayCardRect.x;
+        return displayRect.getX();
     }
 
     public float getDisplayY() {
-        return displayCardRect.y;
+        return displayRect.getY();
     }
 
     public float getDisplayWidth() {
-        return displayCardRect.width;
+        return displayRect.getWidth();
     }
 
     public float getDisplayHeight() {
-        return displayCardRect.height;
+        return displayRect.getHeight();
     }
 
-    public boolean getMoveDisplayWithBase() {
-        return moveDisplayWithBase;
+    public float getDisplayRotation() {
+        return displayRect.getRotation();
     }
 
-    //      Selectable/flippable:
+        // Display offsets:
+    public float getDisplayXOffset() {
+        return displayXOffset;
+    }
+
+    public float getDisplayYOffset() {
+        return displayYOffset;
+    }
+
+    public float getDisplayProportion() {
+        return displayProportion;
+    }
+
+    public float getDisplayRotationOffset() {
+        return displayRotationOffset;
+    }
+
+    // Selectable/flippable:
     public boolean isSelected() {
         return isSelected;
     }
@@ -615,14 +715,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     private static void loadFaceDesignPixmapForCard(int cardNum) {
-        String cardImageName;
-        if(Card.isJoker(cardNum)) {
-            cardImageName = Rank.fromCardNum(cardNum).toString();
-            cardImageName += ".png";
-        } else {
-            cardImageName = Rank.fromCardNum(cardNum).toString() + "_of_" + Suit.fromCardNum(cardNum).toString();
-            cardImageName += ".png";
-        }
+        String cardImageName = (Card.isJoker(cardNum)) ? Rank.fromCardNum(cardNum).toString() + ".png"
+                : Rank.fromCardNum(cardNum).toString() + "_of_" + Suit.fromCardNum(cardNum).toString() + ".png";
         Pixmap originalImagePixmap =
                 new Pixmap(spriteFolder.child(cardImageName));
         Pixmap resizedImagePixmap =
@@ -724,6 +818,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     private void setupThisCardFaceSprite() {
+        Gdx.app.log("", "Loading sprite for " + card.toString());
         if(faceDesignPixmaps.get(card.cardNum) == null) {
             loadFaceDesignPixmapForCard(card.cardNum);
         }
@@ -770,7 +865,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return sprite;
     }
 
-    void invalidateSprites() {
+    final void invalidateSprites() {
         if(thisCardFaceSprite != null) {
             thisCardFaceSprite.getTexture().dispose();
         }
@@ -784,39 +879,52 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
 
     // Render methods:
     public void render(SpriteBatch batch, Viewport viewport) {
-        renderAt(batch, viewport, getDisplayX(), getDisplayY(), getDisplayWidth(), getDisplayHeight());
+        renderAt(batch, viewport,
+                getDisplayX(), getDisplayY(), getDisplayWidth(), getDisplayHeight(),
+                getOriginXProportion(), getOriginYProportion(), getDisplayRotation());
     }
 
     public void renderBase(SpriteBatch batch, Viewport viewport) {
-        renderAt(batch, viewport, getX(),  getY(), getWidth(), getHeight());
+        renderAt(batch, viewport,
+                getX(),  getY(), getWidth(), getHeight(),
+                getOriginXProportion(), getOriginYProportion(), getRotation());
     }
 
-    public void renderAt(SpriteBatch batch, Viewport viewport, float x, float y, float width, float height) {
+    public void renderAt(SpriteBatch batch, Viewport viewport,
+                         float x, float y, float width, float height,
+                         float originXProportion, float originYProportion, float rotation) {
         if(isFaceUp()) {
             if(thisCardFaceSprite == null) {
                 setupThisCardFaceSprite();
             }
-            renderFace(batch, viewport, x, y, width, height);
+            renderFace(batch, viewport, x, y, width, height, originXProportion, originYProportion, rotation);
         } else {
             if(thisCardBackSprite == null) {
                 setupThisCardBackSprite();
             }
-            renderBack(batch, viewport, x, y, width, height);
+            renderBack(batch, viewport, x, y, width, height, originXProportion, originYProportion, rotation);
         }
     }
 
     private void renderFace(SpriteBatch batch, Viewport viewport,
-                            float x, float y, float width, float height) {
-        drawSprite(batch, viewport, thisCardFaceSprite, x, y, width, height);
+                            float x, float y, float width, float height,
+                            float originXProportion, float originYProportion, float rotation) {
+        drawSprite(batch, viewport, thisCardFaceSprite,
+                x, y, width, height,
+                originXProportion, originYProportion, rotation);
     }
 
     private void renderBack(SpriteBatch batch, Viewport viewport,
-                            float x, float y, float width, float height) {
-        drawSprite(batch, viewport, thisCardBackSprite, x, y, width, height);
+                            float x, float y, float width, float height,
+                            float originXProportion, float originYProportion, float rotation) {
+        drawSprite(batch, viewport, thisCardBackSprite,
+                x, y, width, height,
+                originXProportion, originYProportion, rotation);
     }
 
-    private void drawSprite(SpriteBatch batch, Viewport viewport, Sprite sprite,
-                            float x, float y, float width, float height) {
+    private static void drawSprite(SpriteBatch batch, Viewport viewport, Sprite sprite,
+                            float x, float y, float width, float height,
+                                   float originXProportion, float originYProportion, float rotation) {
         // TODO: Maybe this rounding should only be done when position changes, but I'm too lazy to do that right now
 
         // vecXY is initialized with world coordinates for card position
@@ -838,6 +946,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         viewport.unproject(vecXY);
 
         sprite.setBounds(vecXY.x, vecXY.y, width, height);
+        sprite.setOrigin(originXProportion * width, originYProportion * height);
+        sprite.setRotation(rotation);
         sprite.draw(batch);
     }
 }

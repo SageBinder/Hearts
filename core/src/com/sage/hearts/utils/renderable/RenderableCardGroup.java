@@ -40,7 +40,7 @@ public class RenderableCardGroup<T extends Card & RenderableCard> extends Render
 
         for(int i = 0; i < size(); i++) {
             T c = get(i);
-            c.getEntity().setHeight(cardHeight).setPosition((i * division) + pos.x + offset, pos.y);
+            c.entity().setHeight(cardHeight).setPosition((i * division) + pos.x + offset, pos.y);
         }
 
 //        if(inDebugMode) {

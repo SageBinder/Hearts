@@ -1,10 +1,14 @@
 package com.sage.hearts.utils.card;
 
+import java.util.Random;
+
 @SuppressWarnings("WeakerAccess")
 public class Card {
     public final Rank rank;
     public final Suit suit;
     public final int cardNum;
+
+    private static Random r = new Random();
 
     public Card(Rank rank, Suit suit) throws InvalidCardException {
         this.rank = rank;
@@ -24,6 +28,10 @@ public class Card {
         this.cardNum = other.cardNum;
     }
 
+    public Card() {
+        this(r.nextInt(54));
+    }
+
     public boolean isJoker() {
         return suit == Suit.JOKER;
     }
@@ -41,5 +49,11 @@ public class Card {
 
     public static boolean isJoker(int cardNum) {
         return cardNum == 52 || cardNum == 53;
+    }
+
+    @Override
+    public String toString() {
+        return (isJoker()) ? rank.stringName.replace("_", " ")
+                : rank.stringName + " of " + suit.stringName;
     }
 }

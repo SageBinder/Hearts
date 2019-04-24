@@ -34,6 +34,6 @@ public enum Rank {
 
     @Override
     public String toString() {
-        return stringName;
+        return (rankNum <= 10) ? Integer.toString(rankNum) : stringName;
     }
 }

@@ -21,7 +21,7 @@ public class RenderableCardList<T extends Card & RenderableCard> extends CardLis
     public void render(SpriteBatch batch, Viewport viewport, boolean renderBase) {
         forEach(c -> {
             c.render(batch, viewport);
-            if(renderBase && !c.getEntity().displayRectEqualsBaseRect()) {
+            if(renderBase && !c.entity().displayRectEqualsBaseRect()) {
                 c.renderBase(batch, viewport);
             }
         });

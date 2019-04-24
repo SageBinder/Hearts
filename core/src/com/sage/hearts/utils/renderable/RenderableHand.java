@@ -41,22 +41,22 @@ public class RenderableHand<T extends Card & RenderableCard> extends RenderableC
     }
 
     public boolean add(T c) {
-        c.getEntity().setSelectable(true);
-        c.getEntity().setFlippable(true);
+        c.entity().setSelectable(true);
+        c.entity().setFlippable(true);
         return super.add(c);
     }
 
     public void add(int index, T c) {
-        c.getEntity().setSelectable(true);
-        c.getEntity().setFlippable(true);
+        c.entity().setSelectable(true);
+        c.entity().setFlippable(true);
         super.add(c);
     }
 
     @Override
     public boolean addAll(int index, Collection<? extends T> c) {
         c.forEach(card -> {
-            card.getEntity().setSelectable(true);
-            card.getEntity().setFlippable(true);
+            card.entity().setSelectable(true);
+            card.entity().setFlippable(true);
         });
         return super.addAll(index, c);
     }

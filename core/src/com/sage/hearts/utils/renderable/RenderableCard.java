@@ -7,100 +7,104 @@ import com.sage.hearts.utils.card.Card;
 
 public interface RenderableCard<T extends RenderableCardEntity<? extends T, ? extends Card>> {
     default void render(SpriteBatch batch, Viewport viewport) {
-        getEntity().render(batch, viewport);
+        entity().render(batch, viewport);
     }
 
     default void renderBase(SpriteBatch batch, Viewport viewport) {
-        getEntity().renderBase(batch, viewport);
+        entity().renderBase(batch, viewport);
     }
 
-    default void renderAt(SpriteBatch batch, Viewport viewport, float x, float y, float width, float height) {
-        getEntity().renderAt(batch, viewport, x, y, width, height);
+    default void renderAt(SpriteBatch batch, Viewport viewport,
+                          float x, float y, float width, float height,
+                          float originXProportion, float originYProportion, float rotation) {
+        entity().renderAt(batch, viewport,
+                x, y, width, height,
+                originXProportion, originYProportion, rotation);
     }
 
     // Select setters:
     default T setSelectable(boolean selectable) {
-        return getEntity().setSelectable(selectable);
+        return entity().setSelectable(selectable);
     }
 
     default T setSelected(boolean selected) {
-        return getEntity().setSelected(selected);
+        return entity().setSelected(selected);
     }
 
     default T select() {
-        return getEntity().select();
+        return entity().select();
     }
 
     default T deselect() {
-        return getEntity().deselect();
+        return entity().deselect();
     }
 
     // Position setters:
     default T setPosition(Vector2 pos) {
-        return getEntity().setPosition(pos);
+        return entity().setPosition(pos);
     }
 
     default T setPosition(float x, float y) {
-        return getEntity().setPosition(x, y);
+        return entity().setPosition(x, y);
     }
 
     default T setX(float x) {
-        return getEntity().setX(x);
+        return entity().setX(x);
     }
 
     default T setY(float y) {
-        return getEntity().setY(y);
+        return entity().setY(y);
     }
 
     // Select getters:
     default boolean isSelectable() {
-        return getEntity().isSelectable();
+        return entity().isSelectable();
     }
 
     default boolean isSelected() {
-        return getEntity().isSelected();
+        return entity().isSelected();
     }
 
     // Position/size getters:
     default Vector2 getPosition() {
-        return getEntity().getPosition();
+        return entity().getPosition();
     }
 
     default float getX() {
-        return getEntity().getX();
+        return entity().getX();
     }
 
     default float getY() {
-        return getEntity().getY();
+        return entity().getY();
     }
 
     default float getWidth() {
-        return getEntity().getWidth();
+        return entity().getWidth();
     }
 
     default float getHeight() {
-        return getEntity().getHeight();
+        return entity().getHeight();
     }
 
     default Vector2 getDisplayPosition() {
-        return getEntity().getDisplayPosition();
+        return entity().getDisplayPosition();
     }
 
     default float getDisplayX() {
-        return getEntity().getDisplayX();
+        return entity().getDisplayX();
     }
 
     default float getDisplayY() {
-        return getEntity().getDisplayY();
+        return entity().getDisplayY();
     }
 
     default float getDisplayWidth() {
-        return getEntity().getDisplayWidth();
+        return entity().getDisplayWidth();
     }
 
     default float getDisplayHeight() {
-        return getEntity().getDisplayHeight();
+        return entity().getDisplayHeight();
     }
 
-    T getEntity();
+    T entity();
 }

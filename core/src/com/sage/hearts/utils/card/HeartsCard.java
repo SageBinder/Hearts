@@ -18,6 +18,11 @@ public class HeartsCard extends Card implements Comparable<HeartsCard> {
         this.pointValue = other.pointValue;
     }
 
+    public HeartsCard() {
+        super();
+        pointValue = determinePointValue();
+    }
+
     private int determinePointValue() {
         return (suit == Suit.HEARTS) ? 1
                 : (suit == Suit.SPADES && rank == Rank.QUEEN) ? 13

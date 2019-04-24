@@ -24,7 +24,11 @@ class RenderableHeartsCard extends HeartsCard
         super(other);
     }
 
-    public RenderableHeartsCardEntity getEntity() {
+    RenderableHeartsCard() {
+        super();
+    }
+
+    public RenderableHeartsCardEntity entity() {
         return entity;
     }
 
