@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
@@ -114,7 +115,7 @@ class StartScreen implements Screen, InputProcessor {
         if(button == Input.Buttons.LEFT) {
             test.setPosition(worldPos.x - (test.getWidth() / 2f), worldPos.y - (test.getHeight() / 2f));
 
-            var toAdd = new RenderableHeartsCard((counter += 2) % 54);
+            var toAdd = new RenderableHeartsCard((counter ++) % 54);
             counter %= 54;
             toAdd.entity()
                     .setWidth(viewport.getWorldHeight() / 10)

@@ -1,6 +1,7 @@
 package com.sage.hearts.utils.renderable;
 
 import com.badlogic.gdx.math.Polygon;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 class CardPolygon {
@@ -11,8 +12,7 @@ class CardPolygon {
     private float originYProportion = 0;
 
     CardPolygon(float width, float height) throws IllegalArgumentException {
-        setWidth(width);
-        setHeight(height);
+        setSize(width, height);
         setOriginProportion(0, 0);
     }
 
@@ -24,37 +24,30 @@ class CardPolygon {
         rect.setVertices(other.rect.getVertices());
         this.width = other.width;
         this.height = other.height;
+        this.originXProportion = other.originXProportion;
+        this.originYProportion = other.originYProportion;
     }
 
     boolean contains(float x, float y) {
         return rect.contains(x, y);
     }
 
-    void setWidth(float width) {
-        if(width < 0) {
-            throw new IllegalArgumentException("width must be greater than or equal to 0");
-        }
+    void setWidth(float width) throws IllegalArgumentException {
+        setSize(width, height);
+    }
 
+    void setHeight(float height) throws IllegalArgumentException {
+        setSize(width, height);
+    }
+
+    void setSize(float width, float height) throws IllegalArgumentException {
+        this.height = height;
         this.width = width;
         rect.setVertices(new float[] {
                 0, 0,
                 0, height,
-                width, 0,
-                width, height
-        });
-    }
-
-    void setHeight(float height) {
-        if(height < 0) {
-            throw new IllegalArgumentException("height must be greater than or equal to 0");
-        }
-
-        this.height = height;
-        rect.setVertices(new float[] {
-                0, 0,
-                0, height,
-                width, 0,
-                width, height
+                width, height,
+                width, 0
         });
     }
 
@@ -136,5 +129,9 @@ class CardPolygon {
 
     float[] getTransformedVertices() {
         return rect.getTransformedVertices();
+    }
+
+    Rectangle getBoundingRectangle() {
+        return rect.getBoundingRectangle();
     }
 }

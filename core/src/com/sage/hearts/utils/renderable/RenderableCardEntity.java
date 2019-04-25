@@ -21,8 +21,8 @@ import java.util.HashMap;
 
 @SuppressWarnings({"unchecked", "WeakerAccess", "unused", "UnusedReturnValue"})
 public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends Card> {
-    public static final int CARD_HEIGHT_IN_PIXELS = 950;
-    public static final int CARD_WIDTH_IN_PIXELS = 650;
+    public static final int CARD_HEIGHT_IN_PIXELS = 969;
+    public static final int CARD_WIDTH_IN_PIXELS = 666;
     public static final float HEIGHT_TO_WIDTH_RATIO = (float)CARD_HEIGHT_IN_PIXELS / (float)CARD_WIDTH_IN_PIXELS;
     public static final float WIDTH_TO_HEIGHT_RATIO = (float)CARD_WIDTH_IN_PIXELS / (float)CARD_HEIGHT_IN_PIXELS;
 
@@ -901,7 +901,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                                 && ((j == 0 && x <= circleCenter_x) || (j == 1 && x >= circleCenter_x))
                                 && distance <= radius
                                 && distance >= radius - borderThickness) {
-                            pixmap.drawPixel(x, y, Color.rgba8888(color));
+                            pixmap.drawPixel(x, y);
 
                             // Since it was determined that pixel (x, y) is a border pixel,
                             // the rest of the conditions shouldn't be checked, so exit the two innermost loops.
@@ -939,9 +939,11 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                                          float designWidthScale, float designHeightScale,
                                          int borderThicknessInPixels, Color borderColor) {
         Pixmap spritePixmap = new Pixmap(designPixmap.getWidth(), designPixmap.getHeight(), designPixmap.getFormat());
-        spritePixmap.setBlending(Pixmap.Blending.SourceOver);
+        spritePixmap.setBlending(Pixmap.Blending.None);
         spritePixmap.setColor(backgroundColor);
         spritePixmap.fill();
+
+        spritePixmap.setBlending(Pixmap.Blending.SourceOver);
         spritePixmap.drawPixmap(designPixmap,
                 0, 0, designPixmap.getWidth(), designPixmap.getHeight(),
                 (int)(0.5f * (CARD_WIDTH_IN_PIXELS - (CARD_WIDTH_IN_PIXELS * designWidthScale))),     // dstx
