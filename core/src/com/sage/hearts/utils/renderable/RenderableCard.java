@@ -106,5 +106,13 @@ public interface RenderableCard<T extends RenderableCardEntity<? extends T, ? ex
         return entity().getDisplayHeight();
     }
 
+    default boolean isDisposed() {
+        return entity().isDisposed();
+    }
+
+    default void dispose() {
+        entity().dispose();
+    }
+
     T entity();
 }

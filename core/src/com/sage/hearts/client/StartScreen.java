@@ -4,13 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.sage.hearts.utils.card.Card;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 import com.sage.hearts.utils.renderable.RenderableCard;
@@ -53,8 +51,8 @@ class StartScreen implements Screen, InputProcessor {
                 Hearts.BACKGROUND_COLOR.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-//        test.entity().rotateDeg(delta * 360 / 10);
-//        cards.forEach(c -> c.entity().rotateDeg(delta * 720));
+        test.entity().rotateDeg(delta * 360 / 10);
+        cards.forEach(c -> c.entity().rotateDeg(delta * 720));
 
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
@@ -105,10 +103,13 @@ class StartScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyTyped(char character) {
+        if(character == 'd') {
+            cards.clear();
+        }
         return false;
     }
 
-    int counter = 1;
+    private int counter = 1;
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         var worldPos = viewport.unproject(new Vector2(screenX, screenY));
@@ -124,7 +125,9 @@ class StartScreen implements Screen, InputProcessor {
             cards.add(toAdd);
         } else if(button == Input.Buttons.RIGHT) {
             for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
-                if(i.previous().entity().displayRectContainsPoint(worldPos)) {
+                RenderableCardEntity c;
+                if((c = i.previous().entity()).displayRectContainsPoint(worldPos)) {
+                    c.dispose();
                     i.remove();
                     break;
                 }
@@ -158,6 +161,12 @@ class StartScreen implements Screen, InputProcessor {
 
     @Override
     public boolean scrolled(int amount) {
+        for(int i = 0; i < Math.abs(amount); i++) {
+            cards.add(new RenderableHeartsCard().entity()
+                    .setHeight(viewport.getScreenHeight() / 20)
+                    .setPosition(viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY())))
+                    .card);
+        }
         return false;
     }
 }
