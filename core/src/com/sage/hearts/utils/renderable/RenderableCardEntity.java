@@ -100,6 +100,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     private Sprite backSprite = null;
     private Sprite faceSprite = null;
 
+    private static String imageExtension = ".png";
+
     // Card accessor:
     public final CardT card;
 
@@ -840,7 +842,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     private static void loadBackPixmap() {
-        Pixmap originalImagePixmap = new Pixmap(spriteFolder.child("back.png"));
+        Pixmap originalImagePixmap = new Pixmap(spriteFolder.child("back" + imageExtension));
         backPixmap = new Pixmap(CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS, originalImagePixmap.getFormat());
         backPixmap.drawPixmap(originalImagePixmap,
                 0, 0, originalImagePixmap.getWidth(), originalImagePixmap.getHeight(),
@@ -849,8 +851,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     private static void loadFaceDesignPixmapForCard(int cardNum) {
-        String cardImageName = (Card.isJoker(cardNum)) ? Rank.fromCardNum(cardNum).toString() + ".png"
-                : Rank.fromCardNum(cardNum).toString() + "_of_" + Suit.fromCardNum(cardNum).toString() + ".png";
+        String cardImageName = (Card.isJoker(cardNum)) ? Rank.fromCardNum(cardNum).toString() + imageExtension
+                : Rank.fromCardNum(cardNum).toString() + "_of_" + Suit.fromCardNum(cardNum).toString() + imageExtension;
         Pixmap originalImagePixmap =
                 new Pixmap(spriteFolder.child(cardImageName));
         Pixmap resizedImagePixmap =
@@ -952,7 +954,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     private void setupThisCardFaceSprite() {
-        Gdx.app.log("", "Loading sprite for " + card.toString());
         if(faceDesignPixmaps.get(card.cardNum) == null) {
             loadFaceDesignPixmapForCard(card.cardNum);
         }
@@ -977,7 +978,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                                          float designWidthScale, float designHeightScale,
                                          int borderThicknessInPixels, Color borderColor) {
         Pixmap spritePixmap = new Pixmap(designPixmap.getWidth(), designPixmap.getHeight(), designPixmap.getFormat());
-        spritePixmap.setBlending(Pixmap.Blending.None);
         spritePixmap.setColor(backgroundColor);
         spritePixmap.fill();
 

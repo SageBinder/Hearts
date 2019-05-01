@@ -52,7 +52,7 @@ class StartScreen implements Screen, InputProcessor {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         test.entity().rotateDeg(delta * 360 / 10);
-        cards.forEach(c -> c.entity().rotateDeg(delta * 720));
+        cards.forEach(c -> c.entity().rotateDeg(delta * 360));
 
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
@@ -116,10 +116,10 @@ class StartScreen implements Screen, InputProcessor {
         if(button == Input.Buttons.LEFT) {
             test.setPosition(worldPos.x - (test.getWidth() / 2f), worldPos.y - (test.getHeight() / 2f));
 
-            var toAdd = new RenderableHeartsCard((counter ++) % 54);
-            counter %= 54;
+            counter = (counter + 1) % 54;
+            var toAdd = new RenderableHeartsCard(counter);
             toAdd.entity()
-                    .setWidth(viewport.getWorldHeight() / 10)
+                    .setWidth(viewport.getWorldWidth() / 10)
                     .setPosition(worldPos.x - (toAdd.getWidth() / 2), worldPos.y - (toAdd.getHeight() / 2))
                     .setOriginProportion(0.5f, 0.5f);
             cards.add(toAdd);
@@ -162,9 +162,11 @@ class StartScreen implements Screen, InputProcessor {
     @Override
     public boolean scrolled(int amount) {
         for(int i = 0; i < Math.abs(amount); i++) {
-            cards.add(new RenderableHeartsCard().entity()
+            counter = (counter + 1) % 54;
+            cards.add(new RenderableHeartsCard(counter).entity()
                     .setHeight(viewport.getScreenHeight() / 20)
                     .setPosition(viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY())))
+                    .setOriginProportion(0.5f, 0.5f)
                     .card);
         }
         return false;
