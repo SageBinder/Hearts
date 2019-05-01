@@ -1,9 +1,10 @@
 package com.sage.hearts.utils.card;
 
+import java.io.Serializable;
 import java.util.Random;
 
 @SuppressWarnings("WeakerAccess")
-public class Card {
+public class Card implements Serializable {
     public final Rank rank;
     public final Suit suit;
     public final int cardNum;

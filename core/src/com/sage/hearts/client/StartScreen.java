@@ -28,19 +28,17 @@ class StartScreen implements Screen, InputProcessor {
     StartScreen(Hearts game, GameState gameState) {
         this.game = game;
         this.gameState = gameState;
-
         viewport = new ExtendViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch = new SpriteBatch();
-
         test.entity().setOriginToCenter();
 
-        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        Gdx.input.setInputProcessor(this);
+        show();
     }
 
     @Override
     public void show() {
-
+        Gdx.input.setInputProcessor(this);
+        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     @Override
