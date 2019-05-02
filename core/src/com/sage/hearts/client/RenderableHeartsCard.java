@@ -1,7 +1,7 @@
 package com.sage.hearts.client;
 
 import com.badlogic.gdx.graphics.Color;
-import com.sage.hearts.utils.card.HeartsCard;
+import com.sage.hearts.utils.hearts.HeartsCard;
 import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
@@ -38,12 +38,22 @@ class RenderableHeartsCard extends HeartsCard
 
         private RenderableHeartsCardEntity(RenderableHeartsCard other) {
             super(other);
-            if(card.pointValue > 0) {
-                super.defaultFaceBorderColor.set(defaultPointCardFaceBorderColor);
-                super.defaultBackBorderColor.set(defaultPointCardBackBorderColor);
+            setBorderColorIfPointCard();
+        }
+
+        private void setBorderColorIfPointCard() {
+            if(card.getPoints() > 0) {
                 setFaceBorderColor(defaultPointCardFaceBorderColor);
                 setBackBorderColor(defaultPointCardBackBorderColor);
+            } else {
+                setFaceBorderColor(defaultFaceBorderColor);
+                setBackBorderColor(defaultBackBorderColor);
             }
+        }
+
+        @Override
+        protected void cardChangedImpl() {
+            setBorderColorIfPointCard();
         }
     }
 }

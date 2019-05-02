@@ -26,10 +26,7 @@ public enum Rank {
     }
 
     public static Rank fromCardNum(int cardNum) throws InvalidCardException {
-        if(cardNum > 53) throw new InvalidCardException();
-        return cardNum == 53 ? BIG_JOKER
-                : cardNum == 52 ? SMALL_JOKER
-                : Rank.values()[cardNum / 4];
+        return Card.getRankFromCardNum(cardNum);
     }
 
     @Override

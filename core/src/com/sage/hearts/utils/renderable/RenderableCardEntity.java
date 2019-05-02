@@ -109,8 +109,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     private static final List<RenderableCardEntity> allEntities = new ArrayList<>();
     private boolean isDisposed = false;
 
-    public RenderableCardEntity(CardT other) {
-        card = other;
+    public RenderableCardEntity(CardT card) {
+        this.card = card;
         baseRect.setPosition(0, 0);
         displayRect.setPosition(0, 0);
         reallocateResources(this);
@@ -954,11 +954,11 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     private void setupThisCardFaceSprite() {
-        if(faceDesignPixmaps.get(card.cardNum) == null) {
-            loadFaceDesignPixmapForCard(card.cardNum);
+        if(faceDesignPixmaps.get(card.getCardNum()) == null) {
+            loadFaceDesignPixmapForCard(card.getCardNum());
         }
         faceSprite = setupSpriteFromPixmap(
-                faceDesignPixmaps.get(card.cardNum), getFaceBackgroundColor(),
+                faceDesignPixmaps.get(card.getCardNum()), getFaceBackgroundColor(),
                 getFaceDesignWidthScale(), getFaceDesignHeightScale(),
                 getFaceBorderThicknessInPixels(), getFaceBorderColor());
     }
@@ -1001,7 +1001,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return sprite;
     }
 
-    private void invalidateSprites() {
+    protected final void invalidateSprites() {
         if(faceSprite != null) {
             faceSprite.getTexture().dispose();
         }
@@ -1011,6 +1011,14 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
             backSprite.getTexture().dispose();
         }
         backSprite = null;
+    }
+
+    public final void cardChanged() {
+        cardChangedImpl();
+        invalidateSprites();
+    }
+
+    protected void cardChangedImpl() {
     }
 
     // Render methods:

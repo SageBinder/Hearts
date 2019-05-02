@@ -9,9 +9,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
-import com.sage.hearts.utils.renderable.RenderableCard;
 import com.sage.hearts.utils.renderable.RenderableCardEntity;
 import com.sage.hearts.utils.renderable.RenderableCardList;
 
@@ -94,15 +94,30 @@ class StartScreen implements Screen, InputProcessor {
         return false;
     }
 
+    private int[] keys = new int[2];
     @Override
     public boolean keyUp(int keycode) {
+        if(keycode == Input.Keys.ENTER) {
+            var mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+            for(var c : cards) {
+                if(c.entity.displayRectContainsPoint(mousePos)) {
+                    try {
+                        c.setCardNum(Integer.parseInt(keys[0] + "" + keys[1]));
+                    } catch(InvalidCardException | NumberFormatException ignored) {
+                    }
+                    break;
+                }
+            }
+        }
         return false;
     }
-
     @Override
     public boolean keyTyped(char character) {
         if(character == 'd') {
             cards.clear();
+        } else if(Character.isDigit(character)) {
+            keys[0] = keys[1];
+            keys[1] = Integer.parseInt(character + "");
         }
         return false;
     }

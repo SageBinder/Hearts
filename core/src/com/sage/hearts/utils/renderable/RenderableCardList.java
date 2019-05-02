@@ -53,8 +53,8 @@ public class RenderableCardList<T extends Card & RenderableCard> extends CardLis
     @Override
     public boolean removeAll(Collection<?> list) {
         list.forEach(c -> {
-            if(contains(c)) {
-                ((T)c).dispose();
+            if(contains(c) && c instanceof RenderableCard) {
+                ((RenderableCard)c).dispose();
             }
         });
         return super.removeAll(list);
@@ -81,7 +81,7 @@ public class RenderableCardList<T extends Card & RenderableCard> extends CardLis
     @Override
     public boolean remove(Rank rank, Suit suit) {
         for(T c : this) {
-            if(c.rank == rank && c.suit == suit) {
+            if(c.getRank() == rank && c.getSuit() == suit) {
                 c.dispose();
                 remove(c);
                 return true;

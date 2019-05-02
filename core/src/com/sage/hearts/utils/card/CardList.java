@@ -14,7 +14,7 @@ public class CardList<T extends Card> extends ArrayList<T> {
 
     public boolean remove(Rank rank, Suit suit) {
         for(T c : this) {
-            if(c.rank == rank && c.suit == suit) {
+            if(c.getRank() == rank && c.getSuit() == suit) {
                 remove(c);
                 return true;
             }
@@ -24,7 +24,7 @@ public class CardList<T extends Card> extends ArrayList<T> {
 
     public boolean contains(Rank rank, Suit suit) {
         for(T c : this) {
-            if(c.rank == rank && c.suit == suit) {
+            if(c.getRank() == rank && c.getSuit() == suit) {
                 return true;
             }
         }

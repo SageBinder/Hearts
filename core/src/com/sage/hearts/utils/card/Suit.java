@@ -16,8 +16,7 @@ public enum Suit {
     }
 
     public static Suit fromCardNum(int cardNum) throws InvalidCardException {
-        if(cardNum > 53) throw new InvalidCardException();
-        return cardNum >= 52 ? JOKER : Suit.values()[cardNum % 4];
+        return Card.getSuitFromCardNum(cardNum);
     }
 
     @Override
