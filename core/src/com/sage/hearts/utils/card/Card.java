@@ -11,7 +11,8 @@ import java.util.Random;
 
 @SuppressWarnings("WeakerAccess")
 public class Card implements Serializable {
-    private static Random r = new Random();
+    // Marked transient because... well, I mean, why would it need to be serialized?
+    private static transient Random r = new Random();
 
     // These are marked transient because they can be determined from cardNum, so we only need to serialize cardNum
     private transient Rank rank;

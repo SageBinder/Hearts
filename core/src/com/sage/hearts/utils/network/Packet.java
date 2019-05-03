@@ -1,7 +1,6 @@
 package com.sage.hearts.utils.network;
 
 import com.badlogic.gdx.utils.SerializationException;
-import com.sage.hearts.server.network.ServerPacket;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.Serializable;
@@ -22,7 +21,7 @@ public abstract class Packet<T extends NetworkCode> implements Serializable {
         return SerializationUtils.serialize(this);
     }
 
-    public static ServerPacket fromBytes(byte[] bytes) throws SerializationException {
+    public static Packet fromBytes(byte[] bytes) throws SerializationException {
         try {
             return SerializationUtils.deserialize(bytes);
         } catch(ClassCastException | IllegalArgumentException e) {

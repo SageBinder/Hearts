@@ -3,9 +3,11 @@ package com.sage.hearts.client;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.sage.hearts.client.game.GameState;
+import com.sage.hearts.client.screens.*;
 
 public class HeartsGame extends Game {
-    static final Color BACKGROUND_COLOR = new Color(0, 0.2f, 0.11f, 1);
+    public static final Color BACKGROUND_COLOR = new Color(0, 0.2f, 0.11f, 1);
 
     private final GameState gameState = new GameState();
 

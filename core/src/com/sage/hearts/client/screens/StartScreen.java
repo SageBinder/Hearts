@@ -1,4 +1,4 @@
-package com.sage.hearts.client;
+package com.sage.hearts.client.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -9,13 +9,16 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.sage.hearts.client.HeartsGame;
+import com.sage.hearts.client.game.RenderableHeartsCard;
+import com.sage.hearts.client.game.GameState;
 import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 import com.sage.hearts.utils.renderable.RenderableCardEntity;
 import com.sage.hearts.utils.renderable.RenderableCardList;
 
-class StartScreen implements Screen, InputProcessor {
+public class StartScreen implements Screen, InputProcessor {
     private HeartsGame game;
     private GameState gameState;
 
@@ -25,7 +28,7 @@ class StartScreen implements Screen, InputProcessor {
     private RenderableHeartsCard test = new RenderableHeartsCard(Rank.QUEEN, Suit.SPADES);
     private RenderableCardList<RenderableHeartsCard> cards = new RenderableCardList<>();
 
-    StartScreen(HeartsGame game, GameState gameState) {
+    public StartScreen(HeartsGame game, GameState gameState) {
         this.game = game;
         this.gameState = gameState;
         viewport = new ExtendViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -38,7 +41,8 @@ class StartScreen implements Screen, InputProcessor {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this);
-        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        // resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()); is automatically called after show();
     }
 
     @Override

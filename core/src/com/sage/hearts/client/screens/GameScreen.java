@@ -1,9 +1,12 @@
-package com.sage.hearts.client;
+package com.sage.hearts.client.screens;
 
 import com.badlogic.gdx.Screen;
+import com.sage.hearts.client.HeartsGame;
+import com.sage.hearts.client.game.GameState;
 
-class LobbyScreen implements Screen {
-    LobbyScreen(HeartsGame game, GameState gameState) {
+public class GameScreen implements Screen {
+
+    public GameScreen(HeartsGame game, GameState gameState) {
     }
 
     @Override

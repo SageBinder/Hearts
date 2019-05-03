@@ -1,4 +1,4 @@
-package com.sage.hearts.client;
+package com.sage.hearts.client.game;
 
 import com.badlogic.gdx.graphics.Color;
 import com.sage.hearts.utils.card.InvalidCardException;
@@ -8,23 +8,23 @@ import com.sage.hearts.utils.hearts.HeartsCard;
 import com.sage.hearts.utils.renderable.RenderableCard;
 import com.sage.hearts.utils.renderable.RenderableCardEntity;
 
-class RenderableHeartsCard extends HeartsCard
+public class RenderableHeartsCard extends HeartsCard
         implements RenderableCard<RenderableHeartsCard.RenderableHeartsCardEntity> {
-    final RenderableHeartsCardEntity entity = new RenderableHeartsCardEntity(this);
+    public final RenderableHeartsCardEntity entity = new RenderableHeartsCardEntity(this);
 
-    RenderableHeartsCard(Rank rank, Suit suit) throws InvalidCardException {
+    public RenderableHeartsCard(Rank rank, Suit suit) throws InvalidCardException {
         super(rank, suit);
     }
 
-    RenderableHeartsCard(int cardNum) throws InvalidCardException {
+    public RenderableHeartsCard(int cardNum) throws InvalidCardException {
         super(cardNum);
     }
 
-    RenderableHeartsCard(RenderableHeartsCard other) throws InvalidCardException {
+    public RenderableHeartsCard(RenderableHeartsCard other) throws InvalidCardException {
         super(other);
     }
 
-    RenderableHeartsCard() {
+    public RenderableHeartsCard() {
         super();
     }
 
@@ -32,7 +32,7 @@ class RenderableHeartsCard extends HeartsCard
         return entity;
     }
 
-    class RenderableHeartsCardEntity extends RenderableCardEntity<RenderableHeartsCardEntity, RenderableHeartsCard> {
+    public class RenderableHeartsCardEntity extends RenderableCardEntity<RenderableHeartsCardEntity, RenderableHeartsCard> {
         final Color defaultPointCardFaceBorderColor = new Color(0.75f, 0.75f, 0f, 1f);
         final Color defaultPointCardBackBorderColor = new Color(defaultPointCardFaceBorderColor);
 

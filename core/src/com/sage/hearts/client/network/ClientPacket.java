@@ -10,4 +10,8 @@ public class ClientPacket extends Packet<ClientCode> {
     public ClientPacket(ClientCode networkCode) {
         super(networkCode);
     }
+
+    public static ClientPacket fromBytes(byte[] bytes) throws ClassCastException {
+        return (ClientPacket)Packet.fromBytes(bytes);
+    }
 }
