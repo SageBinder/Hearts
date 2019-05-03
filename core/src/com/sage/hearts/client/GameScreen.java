@@ -4,7 +4,7 @@ import com.badlogic.gdx.Screen;
 
 class GameScreen implements Screen {
 
-    GameScreen(Hearts game, GameState gameState) {
+    GameScreen(HeartsGame game, GameState gameState) {
     }
 
     @Override

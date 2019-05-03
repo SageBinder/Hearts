@@ -43,7 +43,7 @@ class CardPolygon {
     void setSize(float width, float height) throws IllegalArgumentException {
         this.height = height;
         this.width = width;
-        rect.setVertices(new float[] {
+        rect.setVertices(new float[]{
                 0, 0,
                 0, height,
                 width, height,
@@ -64,7 +64,7 @@ class CardPolygon {
     }
 
     void setPosition(Vector2 position) {
-       rect.setPosition(position.x, position.y);
+        rect.setPosition(position.x, position.y);
     }
 
     void setRotation(float deg) {

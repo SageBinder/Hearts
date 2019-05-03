@@ -1,10 +1,10 @@
 package com.sage.hearts.client;
 
 import com.badlogic.gdx.graphics.Color;
-import com.sage.hearts.utils.hearts.HeartsCard;
 import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
+import com.sage.hearts.utils.hearts.HeartsCard;
 import com.sage.hearts.utils.renderable.RenderableCard;
 import com.sage.hearts.utils.renderable.RenderableCardEntity;
 

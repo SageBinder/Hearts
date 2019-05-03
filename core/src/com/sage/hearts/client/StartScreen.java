@@ -16,7 +16,7 @@ import com.sage.hearts.utils.renderable.RenderableCardEntity;
 import com.sage.hearts.utils.renderable.RenderableCardList;
 
 class StartScreen implements Screen, InputProcessor {
-    private Hearts game;
+    private HeartsGame game;
     private GameState gameState;
 
     private Viewport viewport;
@@ -25,7 +25,7 @@ class StartScreen implements Screen, InputProcessor {
     private RenderableHeartsCard test = new RenderableHeartsCard(Rank.QUEEN, Suit.SPADES);
     private RenderableCardList<RenderableHeartsCard> cards = new RenderableCardList<>();
 
-    StartScreen(Hearts game, GameState gameState) {
+    StartScreen(HeartsGame game, GameState gameState) {
         this.game = game;
         this.gameState = gameState;
         viewport = new ExtendViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -43,10 +43,10 @@ class StartScreen implements Screen, InputProcessor {
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(Hearts.BACKGROUND_COLOR.r,
-                Hearts.BACKGROUND_COLOR.g,
-                Hearts.BACKGROUND_COLOR.b,
-                Hearts.BACKGROUND_COLOR.a);
+        Gdx.gl.glClearColor(HeartsGame.BACKGROUND_COLOR.r,
+                HeartsGame.BACKGROUND_COLOR.g,
+                HeartsGame.BACKGROUND_COLOR.b,
+                HeartsGame.BACKGROUND_COLOR.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         test.entity().rotateDeg(delta * 360 / 10);
@@ -95,6 +95,7 @@ class StartScreen implements Screen, InputProcessor {
     }
 
     private int[] keys = new int[2];
+
     @Override
     public boolean keyUp(int keycode) {
         if(keycode == Input.Keys.ENTER) {
@@ -111,6 +112,7 @@ class StartScreen implements Screen, InputProcessor {
         }
         return false;
     }
+
     @Override
     public boolean keyTyped(char character) {
         if(character == 'd') {
@@ -123,6 +125,7 @@ class StartScreen implements Screen, InputProcessor {
     }
 
     private int counter = 1;
+
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         var worldPos = viewport.unproject(new Vector2(screenX, screenY));

@@ -3,7 +3,7 @@ package com.sage.hearts.client;
 import com.badlogic.gdx.Screen;
 
 class OptionsScreen implements Screen {
-    OptionsScreen(Hearts game, GameState gameState) {
+    OptionsScreen(HeartsGame game, GameState gameState) {
     }
 
     @Override

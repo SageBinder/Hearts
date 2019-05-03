@@ -11,12 +11,12 @@ import java.util.Random;
 
 @SuppressWarnings("WeakerAccess")
 public class Card implements Serializable {
+    private static Random r = new Random();
+
     // These are marked transient because they can be determined from cardNum, so we only need to serialize cardNum
     private transient Rank rank;
     private transient Suit suit;
     private int cardNum;
-
-    private static Random r = new Random();
 
     public Card(Rank rank, Suit suit) throws InvalidCardException {
         this.rank = rank;
@@ -36,63 +36,6 @@ public class Card implements Serializable {
 
     public Card() {
         this(r.nextInt(54));
-    }
-
-    public boolean isJoker() {
-        return suit == Suit.JOKER;
-    }
-
-    public boolean isSameAs(Card other) {
-        return this.cardNum == other.cardNum;
-    }
-
-    public int getCardNum() {
-        return cardNum;
-    }
-
-    public Suit getSuit() {
-        return suit;
-    }
-
-    public Rank getRank() {
-        return rank;
-    }
-
-    public void setCardNum(int cardNum) throws InvalidCardException {
-        if(isValidCardNum(cardNum)) {
-            this.cardNum = cardNum;
-            suit = Suit.fromCardNum(cardNum);
-            rank = Rank.fromCardNum(cardNum);
-            cardChanged();
-        } else {
-            throw new InvalidCardException();
-        }
-    }
-
-    public void setRank(Rank rank) {
-        setCardNum(getCardNumFromRankAndSuit(rank, suit));
-    }
-
-    public void setSuit(Suit suit) {
-        setCardNum(getCardNumFromRankAndSuit(rank, suit));
-    }
-
-    public void setRankAndSuit(Rank rank, Suit suit) {
-        setCardNum(getCardNumFromRankAndSuit(rank, suit));
-    }
-
-    private void cardChanged() {
-        cardChangedImpl();
-        if(this instanceof RenderableCard) {
-            var entity = ((RenderableCard)this).entity();
-            if(entity != null) {
-                entity.cardChanged();
-            }
-        }
-    }
-
-
-    protected void cardChangedImpl() {
     }
 
     public static int getCardNumFromRankAndSuit(Rank rank, Suit suit) throws InvalidCardException {
@@ -128,6 +71,62 @@ public class Card implements Serializable {
 
     public static boolean isValidCardNum(int cardNum) {
         return cardNum <= 53 && cardNum >= 0;
+    }
+
+    public boolean isJoker() {
+        return suit == Suit.JOKER;
+    }
+
+    public boolean isSameAs(Card other) {
+        return this.cardNum == other.cardNum;
+    }
+
+    public int getCardNum() {
+        return cardNum;
+    }
+
+    public void setCardNum(int cardNum) throws InvalidCardException {
+        if(isValidCardNum(cardNum)) {
+            this.cardNum = cardNum;
+            suit = Suit.fromCardNum(cardNum);
+            rank = Rank.fromCardNum(cardNum);
+            cardChanged();
+        } else {
+            throw new InvalidCardException();
+        }
+    }
+
+    public Suit getSuit() {
+        return suit;
+    }
+
+    public void setSuit(Suit suit) {
+        setCardNum(getCardNumFromRankAndSuit(rank, suit));
+    }
+
+    public Rank getRank() {
+        return rank;
+    }
+
+    public void setRank(Rank rank) {
+        setCardNum(getCardNumFromRankAndSuit(rank, suit));
+    }
+
+    public void setRankAndSuit(Rank rank, Suit suit) {
+        setCardNum(getCardNumFromRankAndSuit(rank, suit));
+    }
+
+    private void cardChanged() {
+        cardChangedImpl();
+        if(this instanceof RenderableCard) {
+            var entity = ((RenderableCard)this).entity();
+            if(entity != null) {
+                entity.cardChanged();
+            }
+        }
+    }
+
+    protected void cardChangedImpl() {
     }
 
     @Override

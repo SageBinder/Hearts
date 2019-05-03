@@ -4,20 +4,20 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 
-public class Hearts extends Game {
+public class HeartsGame extends Game {
     static final Color BACKGROUND_COLOR = new Color(0, 0.2f, 0.11f, 1);
 
-	private final GameState gameState = new GameState();
+    private final GameState gameState = new GameState();
 
-	private Screen startScreen,
-    createGameScreen,
-    joinGameScreen,
-    optionsScreen,
-    lobbyScreen,
-    gameScreen;
+    private Screen startScreen,
+            createGameScreen,
+            joinGameScreen,
+            optionsScreen,
+            lobbyScreen,
+            gameScreen;
 
-	@Override
-	public void create () {
+    @Override
+    public void create() {
         startScreen = new StartScreen(this, gameState);
         createGameScreen = new CreateGameScreen(this, gameState);
         joinGameScreen = new JoinGameScreen(this, gameState);
@@ -25,33 +25,33 @@ public class Hearts extends Game {
         lobbyScreen = new LobbyScreen(this, gameState);
         gameScreen = new GameScreen(this, gameState);
         setScreen(startScreen);
-	}
+    }
 
-	void showStartScreen() {
-	    setScreen(startScreen);
+    void showStartScreen() {
+        setScreen(startScreen);
     }
 
     void showCreateGameScreen() {
-	    setScreen(createGameScreen);
+        setScreen(createGameScreen);
     }
 
     void showJoinGameScreen() {
-	    setScreen(joinGameScreen);
+        setScreen(joinGameScreen);
     }
 
     void showOptionsScreen() {
-	    setScreen(optionsScreen);
+        setScreen(optionsScreen);
     }
 
     void showLobbyScreen() {
-	    setScreen(lobbyScreen);
+        setScreen(lobbyScreen);
     }
 
     void showGameScreen() {
-	    setScreen(gameScreen);
+        setScreen(gameScreen);
     }
-	
-	@Override
-	public void dispose () {
-	}
+
+    @Override
+    public void dispose() {
+    }
 }

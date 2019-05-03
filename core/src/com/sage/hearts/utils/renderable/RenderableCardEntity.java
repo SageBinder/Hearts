@@ -79,7 +79,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     // baseRect represents overall rectangle before rounding corners
     private final CardPolygon baseRect = new CardPolygon(CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS);
     private final CardPolygon displayRect = new CardPolygon(CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS);
-    
+
     private float displayXOffset = 0;
     private float displayYOffset = 0;
     private float displayProportion = 1f;
@@ -166,8 +166,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     // --- SETTERS ---
-        // --- FACE SETTERS ---:
-        // Face design scale:
+    // --- FACE SETTERS ---:
+    // Face design scale:
     public T setFaceDesignScale(float scale) {
         faceDesignHeightScale = scale;
         faceDesignWidthScale = scale;
@@ -230,7 +230,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-        // Face border size:
+    // Face border size:
     public T setFaceBorderThicknessRelativeToHeight(float borderScale) {
         this.faceBorderThicknessInPixels = (int)(borderScale * CARD_HEIGHT_IN_PIXELS);
         invalidateSprites();
@@ -253,8 +253,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return setFaceBorderThicknessInPixels(defaultFaceBorderThicknessInPixels);
     }
 
-        // --- BACK SETTERS ---:
-        // Back design scale:
+    // --- BACK SETTERS ---:
+    // Back design scale:
     public T setBackDesignScale(float scale) {
         backDesignHeightScale = scale;
         backDesignWidthScale = scale;
@@ -336,7 +336,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return setBackBorderThicknessInPixels(defaultBackBorderThicknessInPixels);
     }
 
-        // --- GENERAL SETTERS ---:
+    // --- GENERAL SETTERS ---:
     public T resetSpriteToDefaults() {
         resetCornerRadius();
         resetBothBorderThicknesses();
@@ -369,7 +369,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-        // Colors:
+    // Colors:
     public T setBothBackgroundColors(Color newColor) {
         setFaceBackgroundColor(newColor);
         setBackBackgroundColor(newColor);
@@ -394,7 +394,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-        // Corner radius/border:
+    // Corner radius/border:
     public T setCornerRadiusRelativeToWidth(float scale) {
         cornerRadiusInPixels = (int)(scale * CARD_WIDTH_IN_PIXELS);
         invalidateSprites();
@@ -423,7 +423,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-        // Size/position:
+    // Size/position:
     public T scale(float newScale) {
         setWidth(getWidth() * newScale);
         return (T)this;
@@ -513,7 +513,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-        // Display offsets:
+    // Display offsets:
     public T setDisplayOffset(float x, float y) {
         setDisplayXOffset(x);
         setDisplayYOffset(y);
@@ -558,7 +558,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-        // Selectable/Flippable
+    // Selectable/Flippable
     public T select() {
         setSelected(true);
         return (T)this;
@@ -631,7 +631,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     // --- GETTERS ---
-        // --- FACE GETTERS ---:
+    // --- FACE GETTERS ---:
     public Color getFaceBackgroundColor() {
         return new Color(this.faceBackgroundColor);
     }
@@ -656,7 +656,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return faceDesignWidthScale;
     }
 
-        // --- BACK GETTERS ---:
+    // --- BACK GETTERS ---:
     public float getBackDesignHeightScale() {
         return backDesignHeightScale;
     }
@@ -673,13 +673,13 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return new Color(backBackgroundColor);
     }
 
-        // --- GENERAL GETTERS ---:
-        // Corner radius:
+    // --- GENERAL GETTERS ---:
+    // Corner radius:
     public int getCornerRadiusInPixels() {
         return cornerRadiusInPixels;
     }
 
-        // Base size/position:
+    // Base size/position:
     public Vector2 getPosition() {
         return new Vector2(baseRect.getX(), baseRect.getY());
     }
@@ -720,7 +720,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return XChangeOnSelect;
     }
 
-        // Display size/position:
+    // Display size/position:
     public Vector2 getDisplayPosition() {
         return new Vector2(displayRect.getX(), displayRect.getY());
     }
@@ -745,7 +745,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return displayRect.getRotation();
     }
 
-        // Display offsets:
+    // Display offsets:
     public float getDisplayXOffset() {
         return displayXOffset;
     }
@@ -1030,7 +1030,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
 
     public void renderBase(SpriteBatch batch, Viewport viewport) {
         renderAt(batch, viewport,
-                getX(),  getY(), getWidth(), getHeight(),
+                getX(), getY(), getWidth(), getHeight(),
                 getOriginXProportion(), getOriginYProportion(), getRotation());
     }
 

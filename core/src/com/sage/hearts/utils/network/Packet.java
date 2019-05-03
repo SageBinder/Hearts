@@ -11,7 +11,8 @@ public abstract class Packet<T extends NetworkCode> implements Serializable {
     public T networkCode;
     public final Hashtable<Serializable, Serializable> data = new Hashtable<>();
 
-    public Packet() {}
+    public Packet() {
+    }
 
     public Packet(T networkCode) {
         this.networkCode = networkCode;
