@@ -1,11 +1,17 @@
 package com.sage.hearts.utils.card;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.ListIterator;
+import java.util.stream.Collectors;
 
 public class CardList<T extends Card> extends ArrayList<T> {
     public CardList() {
         super();
+    }
+
+    public CardList(Collection<? extends T> other) {
+        super(other);
     }
 
     public CardList(CardList<T> other) {
@@ -38,6 +44,10 @@ public class CardList<T extends Card> extends ArrayList<T> {
             }
         }
         return false;
+    }
+
+    public ArrayList<Integer> toCardNumList() {
+        return stream().mapToInt(Card::getCardNum).boxed().collect(Collectors.toCollection(ArrayList::new));
     }
 
     public ListIterator<T> reverseListIterator() {

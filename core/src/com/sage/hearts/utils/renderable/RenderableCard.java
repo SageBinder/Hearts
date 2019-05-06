@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.utils.card.Card;
 
-public interface RenderableCard<T extends RenderableCardEntity<? extends T, ? extends Card>> {
+public interface RenderableCard<T extends RenderableCardEntity<? extends T, ? extends Card>> extends Renderable {
     default void render(SpriteBatch batch, Viewport viewport) {
         entity().render(batch, viewport);
     }

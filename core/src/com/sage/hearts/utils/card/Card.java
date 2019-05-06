@@ -1,22 +1,15 @@
 package com.sage.hearts.utils.card;
 
-import com.badlogic.gdx.utils.SerializationException;
 import com.sage.hearts.utils.renderable.RenderableCard;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Random;
 
 @SuppressWarnings("WeakerAccess")
-public class Card implements Serializable {
-    // Marked transient because... well, I mean, why would it need to be serialized?
-    private static transient Random r = new Random();
+public class Card {
+    private static Random r = new Random();
 
-    // These are marked transient because they can be determined from cardNum, so we only need to serialize cardNum
-    private transient Rank rank;
-    private transient Suit suit;
+    private Rank rank;
+    private Suit suit;
     private int cardNum;
 
     public Card(Rank rank, Suit suit) throws InvalidCardException {
@@ -86,7 +79,7 @@ public class Card implements Serializable {
         return cardNum;
     }
 
-    public void setCardNum(int cardNum) throws InvalidCardException {
+    public final void setCardNum(int cardNum) throws InvalidCardException {
         if(isValidCardNum(cardNum)) {
             this.cardNum = cardNum;
             suit = Suit.fromCardNum(cardNum);
@@ -134,17 +127,5 @@ public class Card implements Serializable {
     public String toString() {
         return (isJoker()) ? rank.stringName.replace("_", " ")
                 : rank.stringName + " of " + suit.stringName;
-    }
-
-    private void writeObject(ObjectOutputStream oos) throws IOException {
-        oos.writeInt(cardNum);
-    }
-
-    private void readObject(ObjectInputStream ois) throws IOException {
-        try {
-            setCardNum(ois.readInt());
-        } catch(InvalidCardException e) {
-            throw new SerializationException("Encountered InvalidCardException");
-        }
     }
 }

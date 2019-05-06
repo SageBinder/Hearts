@@ -9,7 +9,7 @@ import com.sage.hearts.client.screens.*;
 public class HeartsGame extends Game {
     public static final Color BACKGROUND_COLOR = new Color(0, 0.2f, 0.11f, 1);
 
-    private final GameState gameState = new GameState();
+    private GameState gameState;
 
     private Screen startScreen,
             createGameScreen,
@@ -20,6 +20,7 @@ public class HeartsGame extends Game {
 
     @Override
     public void create() {
+        gameState = new GameState(this);
         startScreen = new StartScreen(this, gameState);
         createGameScreen = new CreateGameScreen(this, gameState);
         joinGameScreen = new JoinGameScreen(this, gameState);

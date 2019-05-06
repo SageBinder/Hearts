@@ -14,6 +14,7 @@ public class RenderableCardGroup<T extends Card & RenderableCard> extends Render
             regionWidth = Gdx.graphics.getWidth() / 10f,
             prefDivisionProportion = 0.2f;
 
+
     public RenderableCardGroup() {
         super();
     }
