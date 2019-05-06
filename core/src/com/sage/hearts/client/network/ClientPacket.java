@@ -14,4 +14,8 @@ public class ClientPacket extends Packet<ClientCode> {
     public static ClientPacket fromBytes(byte[] bytes) throws ClassCastException {
         return (ClientPacket)Packet.fromBytes(bytes);
     }
+
+    public static ClientPacket pingPacket() {
+        return new ClientPacket(ClientCode.PING);
+    }
 }

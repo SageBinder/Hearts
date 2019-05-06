@@ -2,24 +2,27 @@ package com.sage.hearts.client.network;
 
 import com.badlogic.gdx.Net;
 import com.badlogic.gdx.net.NetJavaSocketImpl;
+import com.badlogic.gdx.net.Socket;
 import com.badlogic.gdx.net.SocketHints;
 import com.badlogic.gdx.utils.SerializationException;
 import com.sage.hearts.client.HeartsGame;
 import com.sage.hearts.server.network.ServerPacket;
-import com.sage.hearts.utils.network.Packet;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class Client extends Thread {
+public class ClientConnection extends Thread {
     final int port;
     final String serverIP;
     private final HeartsGame game;
     private final String playerName;
 
-    private final NetJavaSocketImpl socket;
+    private final Socket socket;
     private final DataOutputStream output;
     private final DataInputStream input;
 
@@ -27,7 +30,7 @@ public class Client extends Thread {
 
     private volatile boolean quit = false;
 
-    Client(int port, String serverIP, String playerName, HeartsGame game) {
+    ClientConnection(int port, String serverIP, String playerName, HeartsGame game) {
         this.port = port;
         this.serverIP = serverIP;
         this.game = game;
@@ -67,15 +70,25 @@ public class Client extends Thread {
         socket.dispose();
     }
 
+    public void sendPacket(ClientPacket packet) throws IOException {
+        byte[] packetBytes = packet.toBytes();
+        output.writeInt(packetBytes.length);
+        output.write(packetBytes);
+        output.flush();
+    }
+
     public Optional<ServerPacket> getPacket() {
         synchronized(packetQueue) {
             return Optional.ofNullable(packetQueue.poll());
         }
     }
 
-    public void sendPacket(Packet packet) throws IOException {
-        byte[] packetBytes = packet.toBytes();
-        output.writeInt(packetBytes.length);
-        output.write(packetBytes);
+    public boolean pingServer() {
+        try {
+            sendPacket(ClientPacket.pingPacket());
+            return true;
+        } catch(IOException e) {
+            return false;
+        }
     }
 }

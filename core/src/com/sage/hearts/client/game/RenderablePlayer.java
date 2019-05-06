@@ -13,7 +13,7 @@ public class RenderablePlayer implements Renderable {
     private boolean isHost = false;
     private boolean isClientPlayer = false;
     private String name;
-    private int gamePoints = 0;
+    private int accumulatedPoints = 0;
 
     public RenderablePlayer(int playerNum, String name) {
         this.playerNum = playerNum;
@@ -36,12 +36,12 @@ public class RenderablePlayer implements Renderable {
         this.name = name;
     }
 
-    public int getGamePoints() {
-        return gamePoints;
+    public int getAccumulatedPoints() {
+        return accumulatedPoints;
     }
 
-    public void setGamePoints(int gamePoints) {
-        this.gamePoints = gamePoints;
+    public void setAccumulatedPoints(int accumulatedPoints) {
+        this.accumulatedPoints = accumulatedPoints;
     }
 
     public int getRoundPoints() {

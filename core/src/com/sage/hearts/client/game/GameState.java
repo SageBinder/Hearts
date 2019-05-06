@@ -1,7 +1,7 @@
 package com.sage.hearts.client.game;
 
 import com.sage.hearts.client.HeartsGame;
-import com.sage.hearts.client.network.Client;
+import com.sage.hearts.client.network.ClientConnection;
 import com.sage.hearts.client.network.ClientPacket;
 import com.sage.hearts.server.network.ServerCode;
 import com.sage.hearts.server.network.ServerPacket;
@@ -21,8 +21,11 @@ public class GameState {
 
     public final RenderablePlayer[] players = new RenderablePlayer[4];
 
+    // warheadMap[i] holds the playerNum for the player who will receive the ith player's warheads
+    public final int[] warheadMap = {-1, -1, -1, -1};
+
     public RenderablePlayer turnPlayer;
-    public RenderablePlayer winningPlayer;
+    public RenderablePlayer leadingPlayer;
 
     public RenderablePlayer thisPlayer;
     public final RenderableHand<RenderableHeartsCard> thisPlayerHand = new RenderableHand<>();
@@ -37,7 +40,7 @@ public class GameState {
         this.game = game;
     }
 
-    public boolean update(Client client) {
+    public boolean update(ClientConnection client) {
         boolean didUpdate = false;
         Optional<ServerPacket> p;
         while((p = client.getPacket()).isPresent()) {
@@ -58,7 +61,7 @@ public class GameState {
     }
 
     public class Actions {
-        public void sendWarheads(Client client) {
+        public void sendWarheads(ClientConnection client) {
             RenderableCardList<RenderableHeartsCard> selectedCards = thisPlayerHand.stream()
                     .filter(RenderableCard::isSelected)
                     .collect(Collectors.toCollection(RenderableCardList::new));
@@ -75,6 +78,26 @@ public class GameState {
                 message = "Sending warheads...";
             } else {
                 message = "You must select 3 cards to send";
+            }
+        }
+
+        public void sendPlay(ClientConnection client) {
+            RenderableCardList<RenderableHeartsCard> selectedCards = thisPlayerHand.stream()
+                    .filter(RenderableCard::isSelected)
+                    .collect(Collectors.toCollection(RenderableCardList::new));
+            if(selectedCards.size() == 1) {
+                ClientPacket packet = new ClientPacket();
+                packet.data.put("play", selectedCards.get(0).getCardNum());
+                try {
+                    client.sendPacket(packet);
+                } catch(IOException e) {
+                    message = "There was an error while trying to contact the server... try again";
+                    return;
+                }
+                thisPlayerHand.remove(selectedCards.get(0));
+                message = "Sending play...";
+            } else {
+                message = "You must select 1 card to play";
             }
         }
     }

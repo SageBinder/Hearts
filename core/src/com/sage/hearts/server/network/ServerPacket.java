@@ -14,4 +14,8 @@ public class ServerPacket extends Packet<ServerCode> {
     public static ServerPacket fromBytes(byte[] bytes) throws ClassCastException {
         return (ServerPacket)Packet.fromBytes(bytes);
     }
+
+    public static ServerPacket pingPacket() {
+        return new ServerPacket(ServerCode.PING);
+    }
 }
