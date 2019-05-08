@@ -46,6 +46,24 @@ public class CardList<T extends Card> extends ArrayList<T> {
         return false;
     }
 
+    public boolean containsAnySuit(Suit suit) {
+        for(T c : this) {
+            if(c.getSuit() == suit) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean containsAnyRank(Rank rank) {
+        for(T c : this) {
+            if(c.getRank() == rank) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public ArrayList<Integer> toCardNumList() {
         return stream().mapToInt(Card::getCardNum).boxed().collect(Collectors.toCollection(ArrayList::new));
     }

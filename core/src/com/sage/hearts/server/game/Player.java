@@ -20,8 +20,9 @@ public class Player {
     private int playerNum;
     private String name;
 
-    private final CardList<HeartsCard> hand = new CardList<>();
-    private final CardList<HeartsCard> collectedPointCards = new CardList<>();
+    public final CardList<HeartsCard> hand = new CardList<>();
+    public final CardList<HeartsCard> collectedPointCards = new CardList<>();
+    public HeartsCard play;
     private int accumulatedPoints = 0;
 
     private final Socket socket;
@@ -47,6 +48,7 @@ public class Player {
                     packet = ClientPacket.fromBytes(input.readNBytes(packetSize));
                 } catch(IOException e) {
                     socket.dispose();
+                    packetQueue.add(new PoisonQueueItem());
                     e.printStackTrace(); // TODO: Should maybe do something else here?
                     return; // I think IOException means the player disconnected, so the queue filler thread can exit
                 } catch(SerializationException e) {
@@ -85,18 +87,40 @@ public class Player {
         }
     }
 
-    public Optional<ClientPacket> getPacket() {
+    public Optional<ClientPacket> getPacket() throws PlayerDisconnectedException {
         synchronized(packetQueue) {
-            return Optional.ofNullable(packetQueue.poll());
+            ClientPacket ret = packetQueue.poll();
+            if(ret instanceof PoisonQueueItem) {
+                throw new PlayerDisconnectedException(this);
+            } else {
+                return Optional.ofNullable(ret);
+            }
         }
     }
 
-    public ClientPacket waitForPacket(long timeout, TimeUnit unit) throws InterruptedException {
+    public ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
+        synchronized(packetQueue) {
+            ClientPacket ret = packetQueue.take();
+            if(ret instanceof PoisonQueueItem) {
+                throw new PlayerDisconnectedException(this);
+            } else {
+                return packetQueue.take();
+            }
+        }
+    }
+
+    public Optional<ClientPacket> waitForPacket(long timeout, TimeUnit unit)
+            throws InterruptedException, PlayerDisconnectedException {
         synchronized(packetQueue) {
             if(timeout <= 0) {
-                return packetQueue.take();
+                return Optional.of(waitForPacket());
             } else {
-                return packetQueue.poll(timeout, unit);
+                ClientPacket ret = packetQueue.poll(timeout, unit);
+                if(ret instanceof PoisonQueueItem) {
+                    throw new PlayerDisconnectedException(this);
+                } else {
+                    return Optional.ofNullable(packetQueue.poll(timeout, unit));
+                }
             }
         }
     }
@@ -131,5 +155,9 @@ public class Player {
 
     public void setAccumulatedPoints(int accumulatedPoints) {
         this.accumulatedPoints = accumulatedPoints;
+    }
+
+    private class PoisonQueueItem extends ClientPacket {
+
     }
 }
