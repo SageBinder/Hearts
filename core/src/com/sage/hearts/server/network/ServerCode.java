@@ -13,7 +13,16 @@ public enum ServerCode implements NetworkCode {
     WAIT_FOR_NEW_PLAY(6),
     WAIT_FOR_LEADING_PLAYER(7),
     TRICK_START(8),
-    TRICK_END(9);
+    TRICK_END(9),
+    WAIT_FOR_TURN_PLAYER(10),
+    WAIT_FOR_HAND(11),
+    ROUND_START(12),
+    WAIT_FOR_PLAYER_ORDER(13),
+    WAIT_FOR_WARHEAD_MAP(14),
+    SEND_WARHEADS(15),
+    INVALID_WARHEADS(16),
+    SUCCESSFUL_WARHEADS(17),
+    PLAYER_DISCONNECTED(18);
 
     public final int codeInt;
 

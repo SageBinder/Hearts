@@ -26,5 +26,6 @@ public class Deck extends CardList<HeartsCard> {
         for(int i = 0; i < size(); i++) {
             players.get(i % players.size()).hand.add(this.get(i));
         }
+        clear();
     }
 }

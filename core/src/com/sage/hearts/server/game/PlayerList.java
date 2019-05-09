@@ -6,7 +6,9 @@ import com.sage.hearts.server.network.PlayerDisconnectedException;
 import com.sage.hearts.server.network.ServerPacket;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 public class PlayerList extends ArrayList<Player> {
     public PlayerList() {
@@ -33,6 +35,15 @@ public class PlayerList extends ArrayList<Player> {
         }
         if(disconnectedPlayers != null) {
             throw new MultiplePlayersDisconnectedException(disconnectedPlayers);
+        }
+    }
+
+    public void sendPacketToAllExcluding(ServerPacket packet, Player...players) {
+        Stream<Player> playerStream = Arrays.stream(players);
+        for(Player p : this) {
+            if(playerStream.noneMatch(p1 -> p1.getPlayerNum() == p.getPlayerNum())) {
+                p.sendPacket(packet);
+            }
         }
     }
 

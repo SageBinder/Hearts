@@ -48,19 +48,18 @@ public class Player {
                     packet = ClientPacket.fromBytes(input.readNBytes(packetSize));
                 } catch(IOException e) {
                     socket.dispose();
-                    packetQueue.add(new PoisonQueueItem());
+                    packetQueue.add(new PlayerDisconnectedItem());
                     e.printStackTrace(); // TODO: Should maybe do something else here?
                     return; // I think IOException means the player disconnected, so the queue filler thread can exit
                 } catch(SerializationException e) {
                     e.printStackTrace();
                     continue;
                 }
-                synchronized(packetQueue) {
-                    try {
-                        packetQueue.add(packet);
-                    } catch(Exception e) {
-                        e.printStackTrace();
-                    }
+
+                try {
+                    packetQueue.add(packet);
+                } catch(Exception e) {
+                    e.printStackTrace();
                 }
             }
         });
@@ -88,39 +87,37 @@ public class Player {
     }
 
     public Optional<ClientPacket> getPacket() throws PlayerDisconnectedException {
-        synchronized(packetQueue) {
-            ClientPacket ret = packetQueue.poll();
-            if(ret instanceof PoisonQueueItem) {
-                throw new PlayerDisconnectedException(this);
-            } else {
-                return Optional.ofNullable(ret);
-            }
+        ClientPacket ret = packetQueue.poll();
+        if(ret instanceof PlayerDisconnectedItem) {
+            throw new PlayerDisconnectedException(this);
+        } else {
+            return Optional.ofNullable(ret);
         }
     }
 
     public ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
-        synchronized(packetQueue) {
-            ClientPacket ret = packetQueue.take();
-            if(ret instanceof PoisonQueueItem) {
-                throw new PlayerDisconnectedException(this);
-            } else {
-                return packetQueue.take();
-            }
+        ClientPacket ret = packetQueue.take();
+        if(ret instanceof PlayerDisconnectedItem) {
+            throw new PlayerDisconnectedException(this);
+        } else if(ret instanceof InterruptItem) {
+            throw new InterruptedException();
+        } else {
+            return packetQueue.take();
         }
     }
 
     public Optional<ClientPacket> waitForPacket(long timeout, TimeUnit unit)
             throws InterruptedException, PlayerDisconnectedException {
-        synchronized(packetQueue) {
-            if(timeout <= 0) {
-                return Optional.of(waitForPacket());
+        if(timeout <= 0) {
+            return Optional.of(waitForPacket());
+        } else {
+            ClientPacket ret = packetQueue.poll(timeout, unit);
+            if(ret instanceof PlayerDisconnectedItem) {
+                throw new PlayerDisconnectedException(this);
+            } else if(ret instanceof InterruptItem) {
+                throw new InterruptedException();
             } else {
-                ClientPacket ret = packetQueue.poll(timeout, unit);
-                if(ret instanceof PoisonQueueItem) {
-                    throw new PlayerDisconnectedException(this);
-                } else {
-                    return Optional.ofNullable(packetQueue.poll(timeout, unit));
-                }
+                return Optional.ofNullable(packetQueue.poll(timeout, unit));
             }
         }
     }
@@ -157,7 +154,19 @@ public class Player {
         this.accumulatedPoints = accumulatedPoints;
     }
 
-    private class PoisonQueueItem extends ClientPacket {
+    public synchronized void interruptPacketWaiting() {
+        packetQueue.add(new InterruptItem());
+    }
+
+    private abstract class PoisonQueueItem extends ClientPacket {
+
+    }
+
+    private class PlayerDisconnectedItem extends PoisonQueueItem {
+
+    }
+
+    private class InterruptItem extends PoisonQueueItem {
 
     }
 }
