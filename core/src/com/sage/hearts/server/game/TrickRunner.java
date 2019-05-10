@@ -48,6 +48,8 @@ public class TrickRunner {
             gameState.turnPlayer = getNextPlayer(gameState, gameState.turnPlayer);
         } while(gameState.turnPlayer != gameState.startingPlayer);
 
+        gameState.leadingPlayer.collectedPointCards.addAll(gameState.pointCardsInTrick);
+
         ServerPacket trickEndPacket = new ServerPacket(ServerCode.TRICK_END);
         trickEndPacket.data.put("winner", gameState.leadingPlayer.getPlayerNum());
         trickEndPacket.data.put("pointcards", gameState.pointCardsInTrick.toCardNumList());

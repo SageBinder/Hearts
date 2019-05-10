@@ -7,6 +7,8 @@ import com.sage.hearts.server.game.GameState;
 import com.sage.hearts.server.game.Player;
 import com.sage.hearts.server.game.PlayerList;
 import com.sage.hearts.server.game.RoundRunner;
+import com.sage.hearts.server.network.MultiplePlayersDisconnectedException;
+import com.sage.hearts.server.network.PlayerDisconnectedException;
 
 public class Server extends Thread {
     public final int port;
@@ -30,7 +32,13 @@ public class Server extends Thread {
     @Override
     public void run() {
         while(true) {
-            RoundRunner.playRound(gameState);
+            try {
+                RoundRunner.playRound(gameState);
+            } catch(PlayerDisconnectedException e) {
+                e.printStackTrace();
+            } catch(MultiplePlayersDisconnectedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

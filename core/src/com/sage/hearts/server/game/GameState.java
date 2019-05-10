@@ -3,14 +3,12 @@ package com.sage.hearts.server.game;
 import com.sage.hearts.utils.card.CardList;
 import com.sage.hearts.utils.card.Suit;
 import com.sage.hearts.utils.hearts.HeartsCard;
-import org.apache.commons.collections4.iterators.PermutationIterator;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.HashMap;
 
 public class GameState {
     public final PlayerList players = new PlayerList();
-    public final int[] warheadMap = {1, 2, 3, 0};
+    public final HashMap<Integer, Integer> warheadMap = new HashMap<>();
     public final CardList<HeartsCard> pointCardsInTrick = new CardList<>();
     public Player turnPlayer = null;
     public Player leadingPlayer = null;
@@ -19,9 +17,6 @@ public class GameState {
     public int tricksPlayed = 0;
     public int roundsPlayed = 0;
     public boolean heartsBroke = false;
-
-    private PermutationIterator<Integer> warheadMapPermuteIter =
-            new PermutationIterator<>(Arrays.stream(warheadMap).boxed().collect(Collectors.toList()));
 
     public void resetForNewRound() {
         tricksPlayed = 0;
@@ -45,17 +40,7 @@ public class GameState {
     }
 
     public void cycleWarheadMap() {
-        Integer[] newWarheadMap;
-        do {
-            if(!warheadMapPermuteIter.hasNext()) {
-                warheadMapPermuteIter =
-                        new PermutationIterator<>(Arrays.stream(warheadMap).boxed().collect(Collectors.toList()));
-            }
-            newWarheadMap = warheadMapPermuteIter.next().toArray(new Integer[0]);
-        } while(newWarheadMap[0] == 0 || newWarheadMap[1] == 1 || newWarheadMap[2] == 2 || newWarheadMap[3] == 3);
-        for(int i = 0; i < newWarheadMap.length; i++) {
-            warheadMap[i] = newWarheadMap[i];
-        }
+        // TODO
     }
 
     // TODO: This isn't correct

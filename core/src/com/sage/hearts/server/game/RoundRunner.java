@@ -19,29 +19,39 @@ public class RoundRunner {
     public static void playRound(GameState gameState)
             throws PlayerDisconnectedException, MultiplePlayersDisconnectedException {
         gameState.resetForNewRound();
-        gameState.players.sendPacketToAll(new ServerPacket(ServerCode.ROUND_START));
 
-        ServerPacket warheadMapPacket = new ServerPacket(ServerCode.WAIT_FOR_WARHEAD_MAP);
-        warheadMapPacket.data.put("map", gameState.warheadMap);
-
-        ServerPacket playerOrderPacket = new ServerPacket(ServerCode.WAIT_FOR_PLAYER_ORDER);
-        playerOrderPacket.data.put("order", gameState.players.stream().mapToInt(Player::getPlayerNum).toArray());
+        ServerPacket roundStartPacket = new ServerPacket(ServerCode.ROUND_START);
+        roundStartPacket.data.put("warheadmap", gameState.warheadMap);
+        roundStartPacket.data.put("playerorder", gameState.players.stream().mapToInt(Player::getPlayerNum).toArray());
+        gameState.players.sendPacketToAll(roundStartPacket);
 
         Deck deck = new Deck(false);
         deck.dealToPlayers(gameState.players);
 
-        gameState.players.sendPacketToAll(warheadMapPacket);
-        gameState.players.sendPacketToAll(playerOrderPacket);
         sendHands(gameState);
-
         tradeWarheads(gameState);
 
         Stream<Player> playerStream = gameState.players.stream();
-        while(playerStream.allMatch(p -> p.hand.size() > 0)) {
+        do {
             TrickRunner.playTrick(gameState);
+        } while(playerStream.allMatch(p -> p.hand.size() > 0));
+
+        // If only one player has points, they've shot the moon. If a player shoots the moon, add 26 points to the
+        // accumulatedPoints of all other players.
+        Stream<Player> playersWithPointsStream = gameState.players.stream().filter(p -> !p.collectedPointCards.isEmpty());
+        if(playersWithPointsStream.count() == 1 && playersWithPointsStream.findFirst().isPresent()) {
+            Player shotTheMoon = playersWithPointsStream.findFirst().get();
+            gameState.players.stream().filter(p -> p != shotTheMoon).forEach(p -> p.accumulatedPoints += 26);
+        } else { // If no one shot the moon, add each player's collectedPointCards point sum to their accumulatedPoints
+            playersWithPointsStream.forEach(p ->
+                    p.accumulatedPoints += p.collectedPointCards.stream().mapToInt(HeartsCard::getPoints).sum());
         }
 
-
+        ServerPacket roundEndPacket = new ServerPacket(ServerCode.ROUND_END);
+        HashMap<Integer, Integer> playerPointsMap = gameState.players.stream()
+                .collect(Collectors.toMap(Player::getPlayerNum, p -> p.accumulatedPoints, (a, b) -> b, HashMap::new));
+        roundEndPacket.data.put("pointsmap", playerPointsMap);
+        gameState.players.sendPacketToAll(roundEndPacket);
     }
 
     private static void sendHands(GameState gameState)
@@ -55,9 +65,20 @@ public class RoundRunner {
 
     private static void tradeWarheads(GameState gameState)
             throws PlayerDisconnectedException, MultiplePlayersDisconnectedException {
-        Map<Player, CardList<HeartsCard>> warheads = getValidWarheadsFromAll(gameState);
+        Map<Player, CardList<HeartsCard>> warheadsMap = getValidWarheadsFromAll(gameState);
 
-        // TODO
+        for(Player sender : warheadsMap.keySet()) {
+            CardList<HeartsCard> warheads = warheadsMap.get(sender);
+            ServerPacket warheadPacket = new ServerPacket(ServerCode.WAIT_FOR_WARHEADS);
+            warheadPacket.data.put("warheads", warheads.toCardNumList());
+
+            Optional<Player> receiver = gameState.players.getByPlayerNum(gameState.warheadMap.get(sender.getPlayerNum()));
+            assert receiver.isPresent();
+            receiver.get().sendPacket(warheadPacket);
+            receiver.get().hand.addAll(warheads);
+
+            sender.hand.removeAllByValue(warheads);
+        }
     }
 
     private static Map<Player, CardList<HeartsCard>> getValidWarheadsFromAll(GameState gameState)

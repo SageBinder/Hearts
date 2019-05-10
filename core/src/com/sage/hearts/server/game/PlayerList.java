@@ -8,6 +8,7 @@ import com.sage.hearts.server.network.ServerPacket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class PlayerList extends ArrayList<Player> {
@@ -58,5 +59,14 @@ public class PlayerList extends ArrayList<Player> {
             return removeAll(e.getDisconnectedPlayers());
         }
         return false;
+    }
+
+    public Optional<Player> getByPlayerNum(int playerNum) {
+        for(Player p : this) {
+            if(p.getPlayerNum() == playerNum) {
+                return Optional.of(p);
+            }
+        }
+        return Optional.empty();
     }
 }

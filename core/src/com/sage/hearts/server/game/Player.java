@@ -23,7 +23,7 @@ public class Player {
     public final CardList<HeartsCard> hand = new CardList<>();
     public final CardList<HeartsCard> collectedPointCards = new CardList<>();
     public HeartsCard play;
-    private int accumulatedPoints = 0;
+    public int accumulatedPoints = 0;
 
     private final Socket socket;
     private final DataOutputStream output;

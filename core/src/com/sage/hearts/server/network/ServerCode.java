@@ -22,7 +22,9 @@ public enum ServerCode implements NetworkCode {
     SEND_WARHEADS(15),
     INVALID_WARHEADS(16),
     SUCCESSFUL_WARHEADS(17),
-    PLAYER_DISCONNECTED(18);
+    WAIT_FOR_WARHEADS(18),
+    ROUND_END(19),
+    PLAYER_DISCONNECTED(200);
 
     public final int codeInt;
 
