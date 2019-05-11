@@ -18,6 +18,10 @@ public class CardList<T extends Card> extends ArrayList<T> {
         super(other);
     }
 
+    public void add(Rank rank, Suit suit, CardSupplier<T> supplier) {
+        add(supplier.get(rank, suit));
+    }
+
     public boolean remove(Rank rank, Suit suit) {
         for(T c : this) {
             if(c.getRank() == rank && c.getSuit() == suit) {
@@ -26,6 +30,14 @@ public class CardList<T extends Card> extends ArrayList<T> {
             }
         }
         return false;
+    }
+
+    public boolean removeAllByValue(CardList<T> remove) {
+        boolean removedAny = false;
+        for(T c : remove) {
+            removedAny |= remove(c.getRank(), c.getSuit());
+        }
+        return removedAny;
     }
 
     public boolean contains(Rank rank, Suit suit) {
@@ -46,11 +58,33 @@ public class CardList<T extends Card> extends ArrayList<T> {
         return false;
     }
 
+    public boolean containsAnySuit(Suit suit) {
+        for(T c : this) {
+            if(c.getSuit() == suit) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean containsAnyRank(Rank rank) {
+        for(T c : this) {
+            if(c.getRank() == rank) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public ArrayList<Integer> toCardNumList() {
         return stream().mapToInt(Card::getCardNum).boxed().collect(Collectors.toCollection(ArrayList::new));
     }
 
     public ListIterator<T> reverseListIterator() {
         return listIterator(size());
+    }
+
+    public static interface CardSupplier<T> {
+        T get(Rank rank, Suit suit);
     }
 }

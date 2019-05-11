@@ -3,10 +3,12 @@ package com.sage.hearts.server.game;
 import com.badlogic.gdx.utils.SerializationException;
 import com.sage.hearts.server.network.MultiplePlayersDisconnectedException;
 import com.sage.hearts.server.network.PlayerDisconnectedException;
+import com.sage.hearts.server.network.ServerCode;
 import com.sage.hearts.server.network.ServerPacket;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class PlayerList extends ArrayList<Player> {
     public PlayerList() {
@@ -36,6 +38,20 @@ public class PlayerList extends ArrayList<Player> {
         }
     }
 
+    public void sendPacketToAllExcluding(ServerPacket packet, Player...excluded) throws MultiplePlayersDisconnectedException {
+        PlayerList newPlayerList = new PlayerList(this);
+        newPlayerList.removeAll(List.of(excluded));
+        newPlayerList.sendPacketToAll(packet);
+    }
+
+    public void sendPlayersToAll() throws MultiplePlayersDisconnectedException {
+        HashMap<Integer, String> players =
+                stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getName, (a, b) -> b, HashMap::new));
+        ServerPacket playersPacket = new ServerPacket(ServerCode.WAIT_FOR_PLAYERS);
+        playersPacket.data.put("players", players);
+        sendPacketToAll(playersPacket);
+    }
+
     public boolean removeDisconnectedPlayers() {
         return removeIf(player -> !player.socketIsConnected());
     }
@@ -47,5 +63,18 @@ public class PlayerList extends ArrayList<Player> {
             return removeAll(e.getDisconnectedPlayers());
         }
         return false;
+    }
+
+    public Optional<Player> getByPlayerNum(int playerNum) {
+        for(Player p : this) {
+            if(p.getPlayerNum() == playerNum) {
+                return Optional.of(p);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public void squashPlayerNums() {
+        IntStream.range(0, size()).forEach(i -> get(i).setPlayerNum(i));
     }
 }

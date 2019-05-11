@@ -22,7 +22,7 @@ public class GameState {
     public final RenderablePlayer[] players = new RenderablePlayer[4];
 
     // warheadMap[i] holds the playerNum for the player who will receive the ith player's warheads
-    public final int[] warheadMap = {-1, -1, -1, -1};
+    public final int[] warheadMap = {0, 0, 0, 0};
 
     public RenderablePlayer turnPlayer;
     public RenderablePlayer leadingPlayer;

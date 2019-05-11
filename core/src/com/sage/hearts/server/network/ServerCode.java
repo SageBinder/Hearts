@@ -4,14 +4,36 @@ import com.sage.hearts.utils.network.InvalidCodeException;
 import com.sage.hearts.utils.network.NetworkCode;
 
 public enum ServerCode implements NetworkCode {
-    PING("PING", 0),
-    START_GAME("START_GAME", 1);
+    PING(0),
+    START_GAME(1),
+    PLAY_TWO_OF_CLUBS(2),
+    MAKE_PLAY(3),
+    INVALID_PLAY(4),
+    SUCCESSFUL_PLAY(5),
+    WAIT_FOR_NEW_PLAY(6),
+    WAIT_FOR_LEADING_PLAYER(7),
+    TRICK_START(8),
+    TRICK_END(9),
+    WAIT_FOR_TURN_PLAYER(10),
+    WAIT_FOR_HAND(11),
+    ROUND_START(12),
+    WAIT_FOR_PLAYER_ORDER(13),
+    WAIT_FOR_WARHEAD_MAP(14),
+    SEND_WARHEADS(15),
+    INVALID_WARHEADS(16),
+    SUCCESSFUL_WARHEADS(17),
+    WAIT_FOR_WARHEADS(18),
+    ROUND_END(19),
+    WAIT_FOR_PLAYERS(20),
+    UNSUCCESSFUL_NAME_CHANGE(21),
+    PLAYER_DISCONNECTED(200),
+    CONNECTION_DENIED(201),
+    CONNECTION_ACCEPTED(202),
+    COULD_NOT_START_GAME(203);
 
-    public final String string;
     public final int codeInt;
 
-    ServerCode(String string, int codeNum) {
-        this.string = string;
+    ServerCode(int codeNum) {
         this.codeInt = codeNum;
     }
 

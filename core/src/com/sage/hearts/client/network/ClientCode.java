@@ -3,14 +3,15 @@ package com.sage.hearts.client.network;
 import com.sage.hearts.utils.network.NetworkCode;
 
 public enum ClientCode implements NetworkCode {
-    PING("PING", 0),
-    START_GAME("START_GAME", 1);
+    PING(0),
+    START_GAME(1),
+    PLAY(2),
+    WARHEADS(3),
+    NAME(4);
 
-    public final String string;
     public final int codeInt;
 
-    ClientCode(String string, int codeInt) {
-        this.string = string;
+    ClientCode(int codeInt) {
         this.codeInt = codeInt;
     }
 }
