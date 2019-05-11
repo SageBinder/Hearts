@@ -5,8 +5,12 @@ import com.sage.hearts.utils.card.Suit;
 import com.sage.hearts.utils.hearts.HeartsCard;
 
 import java.util.HashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class GameState {
+    public final ReentrantLock lock = new ReentrantLock();
+    public volatile boolean roundStarted = false;
+
     public final PlayerList players = new PlayerList();
     public final HashMap<Integer, Integer> warheadMap = new HashMap<>();
     public final CardList<HeartsCard> pointCardsInTrick = new CardList<>();
@@ -37,6 +41,11 @@ public class GameState {
         startingPlayer = turnPlayer = leadingPlayer;
         leadingPlayer = null;
         basePlay = null;
+    }
+
+    public void setPlayers(PlayerList players) {
+        this.players.clear();
+        this.players.addAll(players);
     }
 
     public void cycleWarheadMap() {

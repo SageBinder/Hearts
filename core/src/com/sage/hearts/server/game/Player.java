@@ -2,6 +2,7 @@ package com.sage.hearts.server.game;
 
 import com.badlogic.gdx.net.Socket;
 import com.badlogic.gdx.utils.SerializationException;
+import com.sage.hearts.client.network.ClientCode;
 import com.sage.hearts.client.network.ClientPacket;
 import com.sage.hearts.server.network.PlayerDisconnectedException;
 import com.sage.hearts.server.network.ServerPacket;
@@ -11,6 +12,8 @@ import com.sage.hearts.utils.hearts.HeartsCard;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,11 +34,12 @@ public class Player {
     private final BlockingQueue<ClientPacket> packetQueue = new LinkedBlockingQueue<>();
 
     private final Thread packetQueueFillerThread;
+    private Map<ClientCode, PacketHandler> initialPacketHandlers = new HashMap<>();
 
-    public Player(int playerNum, String name, Socket socket) {
+    public Player(int playerNum, Socket socket) {
         this.socket = socket;
         this.playerNum = playerNum;
-        this.name = name;
+        this.name = "Player " + playerNum;
 
         output = new DataOutputStream(socket.getOutputStream());
         input = new DataInputStream(socket.getInputStream());
@@ -46,6 +50,7 @@ public class Player {
                 try {
                     int packetSize = input.readInt();
                     packet = ClientPacket.fromBytes(input.readNBytes(packetSize));
+                    initialPacketHandler(packet);
                 } catch(IOException e) {
                     socket.dispose();
                     packetQueue.add(new PlayerDisconnectedItem());
@@ -66,12 +71,30 @@ public class Player {
         packetQueueFillerThread.start();
     }
 
+    private void initialPacketHandler(final ClientPacket packet) {
+        if(packet.networkCode != null) {
+            PacketHandler handler = initialPacketHandlers.get(packet.networkCode);
+            if(handler != null) {
+                handler.handle(packet);
+            }
+        }
+    }
+
+    // PacketHandler code will be run by packetQueueFillerThread
+    public void setInitialPacketHandlerForCode(ClientCode code, PacketHandler handler) {
+        initialPacketHandlers.put(code, handler);
+    }
+
+    public void resetInitialPacketHandlers() {
+        initialPacketHandlers.clear();
+    }
+
     public void resetForNewRound() {
         hand.clear();
         collectedPointCards.clear();
     }
 
-    public void sendPacket(ServerPacket packet) throws SerializationException, PlayerDisconnectedException {
+    public void sendPacket(final ServerPacket packet) throws SerializationException, PlayerDisconnectedException {
         if(!socketIsConnected()) {
             throw new PlayerDisconnectedException(this);
         }
@@ -168,5 +191,9 @@ public class Player {
 
     private class InterruptItem extends PoisonQueueItem {
 
+    }
+
+    public interface PacketHandler {
+        void handle(final ClientPacket packet);
     }
 }

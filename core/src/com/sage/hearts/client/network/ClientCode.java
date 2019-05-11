@@ -6,7 +6,8 @@ public enum ClientCode implements NetworkCode {
     PING(0),
     START_GAME(1),
     PLAY(2),
-    WARHEADS(3);
+    WARHEADS(3),
+    NAME(4);
 
     public final int codeInt;
 

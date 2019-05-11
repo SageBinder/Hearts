@@ -3,13 +3,12 @@ package com.sage.hearts.server.game;
 import com.badlogic.gdx.utils.SerializationException;
 import com.sage.hearts.server.network.MultiplePlayersDisconnectedException;
 import com.sage.hearts.server.network.PlayerDisconnectedException;
+import com.sage.hearts.server.network.ServerCode;
 import com.sage.hearts.server.network.ServerPacket;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class PlayerList extends ArrayList<Player> {
     public PlayerList() {
@@ -39,13 +38,18 @@ public class PlayerList extends ArrayList<Player> {
         }
     }
 
-    public void sendPacketToAllExcluding(ServerPacket packet, Player...players) {
-        Stream<Player> playerStream = Arrays.stream(players);
-        for(Player p : this) {
-            if(playerStream.noneMatch(p1 -> p1.getPlayerNum() == p.getPlayerNum())) {
-                p.sendPacket(packet);
-            }
-        }
+    public void sendPacketToAllExcluding(ServerPacket packet, Player...excluded) throws MultiplePlayersDisconnectedException {
+        PlayerList newPlayerList = new PlayerList(this);
+        newPlayerList.removeAll(List.of(excluded));
+        newPlayerList.sendPacketToAll(packet);
+    }
+
+    public void sendPlayersToAll() throws MultiplePlayersDisconnectedException {
+        HashMap<Integer, String> players =
+                stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getName, (a, b) -> b, HashMap::new));
+        ServerPacket playersPacket = new ServerPacket(ServerCode.WAIT_FOR_PLAYERS);
+        playersPacket.data.put("players", players);
+        sendPacketToAll(playersPacket);
     }
 
     public boolean removeDisconnectedPlayers() {
@@ -68,5 +72,9 @@ public class PlayerList extends ArrayList<Player> {
             }
         }
         return Optional.empty();
+    }
+
+    public void squashPlayerNums() {
+        IntStream.range(0, size()).forEach(i -> get(i).setPlayerNum(i));
     }
 }
