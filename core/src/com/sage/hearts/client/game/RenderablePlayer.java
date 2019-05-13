@@ -6,9 +6,11 @@ import com.sage.hearts.utils.hearts.HeartsCard;
 import com.sage.hearts.utils.renderable.Renderable;
 import com.sage.hearts.utils.renderable.RenderableCardGroup;
 
+import java.util.Optional;
+
 public class RenderablePlayer implements Renderable {
     final RenderableCardGroup<RenderableHeartsCard> collectedPointCards = new RenderableCardGroup<>();
-    RenderableHeartsCard play;
+    private RenderableHeartsCard play;
     private int playerNum;
     private boolean isHost = false;
     private boolean isClientPlayer = false;
@@ -48,6 +50,14 @@ public class RenderablePlayer implements Renderable {
         return collectedPointCards.stream().mapToInt(HeartsCard::getPoints).sum();
     }
 
+    public Optional<RenderableHeartsCard> getPlay() {
+        return Optional.ofNullable(play);
+    }
+
+    public void setPlay(RenderableHeartsCard play) {
+        this.play = play;
+    }
+
     boolean isHost() {
         return isHost;
     }
@@ -56,12 +66,18 @@ public class RenderablePlayer implements Renderable {
         this.isHost = isHost;
     }
 
-    boolean isThisPlayer() {
+    boolean isClientPlayer() {
         return isClientPlayer;
     }
 
-    void setThisPlayer(boolean isClientPlayer) {
+    void setIsClientPlayer(boolean isClientPlayer) {
         this.isClientPlayer = isClientPlayer;
+    }
+
+    public void disposeCards() {
+        collectedPointCards.clear();
+        play.dispose();
+        play = null;
     }
 
     @Override

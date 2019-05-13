@@ -150,6 +150,7 @@ public class Server extends Thread {
 
                 if(host == null) {
                     host = newPlayer;
+                    host.setHost(true);
                 }
                 newPlayer.setPlayerNum(gameState.players.size());
                 setInitialPacketHandlersForPlayer(newPlayer);

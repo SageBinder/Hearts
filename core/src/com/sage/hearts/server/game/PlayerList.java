@@ -47,20 +47,47 @@ public class PlayerList extends ArrayList<Player> {
     public void sendPlayersToAll() throws MultiplePlayersDisconnectedException {
         HashMap<Integer, String> players =
                 stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getName, (a, b) -> b, HashMap::new));
-        ServerPacket playersPacket = new ServerPacket(ServerCode.WAIT_FOR_PLAYERS);
-        playersPacket.data.put("players", players);
-        sendPacketToAll(playersPacket);
+        HashMap<Integer, Integer> accumulatedPoints =
+                stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getAccumulatedPoints, (a, b) -> b, HashMap::new));
+        Integer hostNum = stream().filter(Player::isHost).findFirst().orElse(this.get(0)).getPlayerNum();
+
+        // Pretty much copy/pasted code from sendPacketToAll()
+        PlayerList disconnectedPlayers = null;
+        for(Player p : this) {
+            ServerPacket playersPacket = new ServerPacket(ServerCode.WAIT_FOR_PLAYERS);
+            playersPacket.data.put("players", players);
+            playersPacket.data.put("points", accumulatedPoints);
+            playersPacket.data.put("host", hostNum);
+            playersPacket.data.put("you", p.getPlayerNum());
+            try {
+                p.sendPacket(playersPacket);
+            } catch(PlayerDisconnectedException e) {
+                if(disconnectedPlayers == null) {
+                    disconnectedPlayers = new PlayerList();
+                }
+                disconnectedPlayers.add(p);
+            } catch(SerializationException e) {
+                e.printStackTrace();
+            }
+        }
+        if(disconnectedPlayers != null) {
+            throw new MultiplePlayersDisconnectedException(disconnectedPlayers);
+        }
     }
 
     public boolean removeDisconnectedPlayers() {
-        return removeIf(player -> !player.socketIsConnected());
+        boolean ret = removeIf(player -> !player.socketIsConnected());
+        squashPlayerNums();
+        return ret;
     }
 
     public boolean pingAllAndRemoveDisconnected() {
         try {
             sendPacketToAll(ServerPacket.pingPacket());
         } catch(MultiplePlayersDisconnectedException e) {
-            return removeAll(e.getDisconnectedPlayers());
+            boolean ret = removeAll(e.getDisconnectedPlayers());
+            squashPlayerNums();
+            return ret;
         }
         return false;
     }

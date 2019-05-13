@@ -1,5 +1,6 @@
 package com.sage.hearts.client.game;
 
+import com.badlogic.gdx.Gdx;
 import com.sage.hearts.client.HeartsGame;
 import com.sage.hearts.client.network.ClientConnection;
 import com.sage.hearts.client.network.ClientPacket;
@@ -10,8 +11,7 @@ import com.sage.hearts.utils.renderable.RenderableCardList;
 import com.sage.hearts.utils.renderable.RenderableHand;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class GameState {
@@ -21,8 +21,7 @@ public class GameState {
 
     public final RenderablePlayer[] players = new RenderablePlayer[4];
 
-    // warheadMap[i] holds the playerNum for the player who will receive the ith player's warheads
-    public final int[] warheadMap = {0, 0, 0, 0};
+    public final HashMap<Integer, Integer> warheadMap = new HashMap<>();
 
     public RenderablePlayer turnPlayer;
     public RenderablePlayer leadingPlayer;
@@ -33,6 +32,7 @@ public class GameState {
     public ServerCode lastServerCode;
 
     public String message = "";
+    public String buttonText = "";
 
     public boolean heartsBroke = false;
 
@@ -54,9 +54,87 @@ public class GameState {
         updater.update(updatePacket.networkCode, updatePacket.data);
     }
 
+    private Optional<RenderablePlayer> getPlayerByPlayerNum(int playerNum) {
+        return Arrays.stream(players).filter(p -> p.getPlayerNum() == playerNum).findFirst();
+    }
+
     private class Updater {
+        private Map data = null;
         private void update(ServerCode serverCode, Map data) {
             lastServerCode = serverCode;
+            this.data = data;
+            try {
+                switch(lastServerCode) {
+                case WAIT_FOR_PLAYERS:
+                    waitForPlayers();
+                    break;
+                case ROUND_START:
+                    roundStart();
+                    break;
+                case PLAYER_DISCONNECTED:
+                    playerDisconnected();
+                    break;
+                }
+            } catch(ClassCastException e) {
+                Gdx.app.log("Updater.update()",
+                        "Oh shit encountered ClassCastException in Updater.update(), this is VERY BAD");
+                e.printStackTrace();
+            }
+        }
+
+        private void waitForPlayers() {
+            var newPlayersMap = (Map<Integer, String>)data.get("players");
+            var accumulatedPointsMap = (Map<Integer, Integer>)data.get("points");
+            int clientPlayerNum = (Integer)(data.get("you"));
+            int hostNum = (Integer)(data.get("host"));
+
+            for(int i = 0; i < GameState.this.players.length; i++) {
+                if(players[i] != null) {
+                    players[i].disposeCards();
+                    players[i] = null;
+                }
+            }
+
+            Iterator<Integer> keyIter = newPlayersMap.keySet().iterator();
+            for(int i = 0; i < players.length && keyIter.hasNext(); i++) {
+                Integer playerNum = keyIter.next();
+                players[i] = new RenderablePlayer(playerNum, newPlayersMap.get(playerNum));
+                players[i].setHost(playerNum == hostNum);
+                players[i].setIsClientPlayer(playerNum == clientPlayerNum);
+                players[i].setAccumulatedPoints(accumulatedPointsMap.getOrDefault(playerNum, 0));
+            }
+        }
+
+        private void roundStart() {
+            Arrays.stream(players).forEach(p -> {
+                if(p != null) {
+                    p.disposeCards();
+                }
+            });
+            turnPlayer = null;
+            leadingPlayer = null;
+            heartsBroke = false;
+            message = "";
+            buttonText = "";
+
+            warheadMap.clear();
+            warheadMap.putAll((HashMap<Integer, Integer>)data.get("warheadmap"));
+
+            int[] playerOrder = (int[])data.get("playerorder");
+            RenderablePlayer[] newPlayerArr = new RenderablePlayer[players.length];
+            for(int i = 0; i < newPlayerArr.length; i++) {
+                newPlayerArr[i] = getPlayerByPlayerNum(playerOrder[i]).orElseThrow(InvalidServerPacketException::new);
+            }
+            for(int i = 0; i < newPlayerArr.length; i++) {
+                players[i] = newPlayerArr[i];
+            }
+
+            game.showGameScreen();
+        }
+
+        private void playerDisconnected() {
+            message = "A player has disconnected!";
+            game.showLobbyScreen();
         }
     }
 

@@ -30,27 +30,27 @@ public class HeartsGame extends Game {
         setScreen(startScreen);
     }
 
-    void showStartScreen() {
+    public void showStartScreen() {
         setScreen(startScreen);
     }
 
-    void showCreateGameScreen() {
+    public void showCreateGameScreen() {
         setScreen(createGameScreen);
     }
 
-    void showJoinGameScreen() {
+    public void showJoinGameScreen() {
         setScreen(joinGameScreen);
     }
 
-    void showOptionsScreen() {
+    public void showOptionsScreen() {
         setScreen(optionsScreen);
     }
 
-    void showLobbyScreen() {
+    public void showLobbyScreen() {
         setScreen(lobbyScreen);
     }
 
-    void showGameScreen() {
+    public void showGameScreen() {
         setScreen(gameScreen);
     }
 

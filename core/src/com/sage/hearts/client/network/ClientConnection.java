@@ -10,7 +10,6 @@ import com.sage.hearts.server.network.ServerPacket;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Queue;
@@ -52,16 +51,14 @@ public class ClientConnection extends Thread {
             try {
                 int packetSize = input.readInt();
                 packet = ServerPacket.fromBytes(input.readNBytes(packetSize));
-            } catch(EOFException e) {
+            } catch(IOException e) {
                 quit();
-                return;
-            } catch(IOException | SerializationException e) {
+                continue;
+            } catch(SerializationException | IllegalArgumentException | OutOfMemoryError e) {
                 e.printStackTrace();
                 continue;
             }
-            synchronized(packetQueue) {
-                packetQueue.add(packet);
-            }
+            packetQueue.add(packet);
         }
     }
 

@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class Player {
     private int playerNum;
     private String name;
+    private boolean isHost = false;
 
     public final CardList<HeartsCard> hand = new CardList<>();
     public final CardList<HeartsCard> collectedPointCards = new CardList<>();
@@ -56,7 +57,7 @@ public class Player {
                     packetQueue.add(new PlayerDisconnectedItem());
                     e.printStackTrace(); // TODO: Should maybe do something else here?
                     return; // I think IOException means the player disconnected, so the queue filler thread can exit
-                } catch(SerializationException e) {
+                } catch(SerializationException | IllegalArgumentException | OutOfMemoryError e) {
                     e.printStackTrace();
                     continue;
                 }
@@ -159,6 +160,14 @@ public class Player {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isHost() {
+        return isHost;
+    }
+
+    public void setHost(boolean host) {
+        this.isHost = host;
     }
 
     public boolean socketIsConnected() {

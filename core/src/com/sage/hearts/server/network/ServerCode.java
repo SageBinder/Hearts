@@ -5,7 +5,6 @@ import com.sage.hearts.utils.network.NetworkCode;
 
 public enum ServerCode implements NetworkCode {
     PING(0),
-    START_GAME(1),
     PLAY_TWO_OF_CLUBS(2),
     MAKE_PLAY(3),
     INVALID_PLAY(4),
@@ -17,8 +16,6 @@ public enum ServerCode implements NetworkCode {
     WAIT_FOR_TURN_PLAYER(10),
     WAIT_FOR_HAND(11),
     ROUND_START(12),
-    WAIT_FOR_PLAYER_ORDER(13),
-    WAIT_FOR_WARHEAD_MAP(14),
     SEND_WARHEADS(15),
     INVALID_WARHEADS(16),
     SUCCESSFUL_WARHEADS(17),
@@ -31,6 +28,8 @@ public enum ServerCode implements NetworkCode {
     CONNECTION_ACCEPTED(202),
     COULD_NOT_START_GAME(203);
 
+    // Honestly I don't think codeInt is necessary because the enum is just being serialized anyways.
+    // A custom serializer could make use of codeInt but I don't know if that's worth the effort.
     public final int codeInt;
 
     ServerCode(int codeNum) {
