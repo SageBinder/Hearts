@@ -11,13 +11,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 public class RenderableCardList<T extends Card & RenderableCard> extends CardList<T> {
     public RenderableCardList() {
         super();
     }
 
-    public RenderableCardList(CardList<T> other) {
+    public RenderableCardList(Collection<? extends T> other) {
         super(other);
     }
 
@@ -35,18 +36,8 @@ public class RenderableCardList<T extends Card & RenderableCard> extends CardLis
     }
 
     @Override
-    public boolean remove(Object o) {
-        if(o instanceof RenderableCard) {
-            ((RenderableCard)o).dispose();
-        }
-        return super.remove(o);
-    }
-
-    @Override
     protected void removeRange(int fromIndex, int toIndex) {
-        for(int i = fromIndex; i <= toIndex; i++) {
-            get(i).dispose();
-        }
+        IntStream.rangeClosed(fromIndex, toIndex).forEach(i -> get(i).dispose());
         super.removeRange(fromIndex, toIndex);
     }
 
@@ -73,6 +64,14 @@ public class RenderableCardList<T extends Card & RenderableCard> extends CardLis
     }
 
     @Override
+    public boolean remove(Object o) {
+        if(o instanceof RenderableCard) {
+            ((RenderableCard)o).dispose();
+        }
+        return super.remove(o);
+    }
+
+    @Override
     public T remove(int index) {
         get(index).dispose();
         return super.remove(index);
@@ -82,7 +81,6 @@ public class RenderableCardList<T extends Card & RenderableCard> extends CardLis
     public boolean remove(Rank rank, Suit suit) {
         for(T c : this) {
             if(c.getRank() == rank && c.getSuit() == suit) {
-                c.dispose();
                 remove(c);
                 return true;
             }

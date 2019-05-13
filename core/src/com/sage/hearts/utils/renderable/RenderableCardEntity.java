@@ -40,8 +40,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     public final float defaultBackDesignHeightScale = ((float)CARD_HEIGHT_IN_PIXELS - (2 * (float)defaultBackBorderThicknessInPixels)) / (float)CARD_HEIGHT_IN_PIXELS;
     public final float defaultBackDesignWidthScale = ((float)CARD_WIDTH_IN_PIXELS - (2 * (float)defaultBackBorderThicknessInPixels)) / (float)CARD_WIDTH_IN_PIXELS;
 
-    public final float defaultYChangeOnSelect = 0.9f; // Proportional to height
-    public final float defaultXChangeOnSelect = 0.0f; // Proportional to width
+    public final float defaultProportionalYChangeOnSelect = 0.9f; // Proportional to height
+    public final float defaultProportionalXChangeOnSelect = 0.0f; // Proportional to width
 
     public final Color defaultFaceBorderColor = new Color(0, 0, 0, 1);
     public final Color defaultBackBorderColor = new Color(1, 1, 1, 1);
@@ -67,8 +67,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     private float backDesignHeightScale = defaultBackDesignHeightScale;
     private float backDesignWidthScale = defaultBackDesignWidthScale;
 
-    private float YChangeOnSelect = defaultYChangeOnSelect; // Proportional to height
-    private float XChangeOnSelect = defaultXChangeOnSelect; // Proportional to width
+    private float proportionalYChangeOnSelect = defaultProportionalYChangeOnSelect; // Proportional to height
+    private float proportionalXChangeOnSelect = defaultProportionalXChangeOnSelect; // Proportional to width
 
     private final Color faceBorderColor = new Color(defaultFaceBorderColor);
     private final Color backBorderColor = new Color(defaultBackBorderColor);
@@ -123,11 +123,11 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     private void setDisplayX() {
-        displayRect.setX(baseRect.getX() + displayXOffset + (isSelected ? XChangeOnSelect * getDisplayWidth() : 0));
+        displayRect.setX(baseRect.getX() + displayXOffset + (isSelected ? proportionalXChangeOnSelect * getDisplayWidth() : 0));
     }
 
     private void setDisplayY() {
-        displayRect.setY(baseRect.getY() + displayYOffset + (isSelected ? YChangeOnSelect * getDisplayHeight() : 0));
+        displayRect.setY(baseRect.getY() + displayYOffset + (isSelected ? proportionalYChangeOnSelect * getDisplayHeight() : 0));
     }
 
     private void setDisplayPos() {
@@ -595,24 +595,34 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-    public T setYChangeOnSelect(float YChangeOnSelect) {
-        this.YChangeOnSelect = YChangeOnSelect;
+    public T setProportionalYChangeOnSelect(float proportionalYChangeOnSelect) {
+        this.proportionalYChangeOnSelect = proportionalYChangeOnSelect;
         setDisplayY();
         return (T)this;
     }
 
-    public T resetYChangeOnSelect() {
-        return setYChangeOnSelect(defaultYChangeOnSelect);
+    public T setAbsoluteYChangeOnSelect(float absoluteYChangeOnSelect) {
+        setProportionalYChangeOnSelect(absoluteYChangeOnSelect / getHeight());
+        return (T)this;
     }
 
-    public T setXChangeOnSelect(float XChangeOnSelect) {
-        this.XChangeOnSelect = XChangeOnSelect;
+    public T resetYChangeOnSelect() {
+        return setProportionalYChangeOnSelect(defaultProportionalYChangeOnSelect);
+    }
+
+    public T setProportionalXChangeOnSelect(float proportionalXChangeOnSelect) {
+        this.proportionalXChangeOnSelect = proportionalXChangeOnSelect;
         setDisplayX();
         return (T)this;
     }
 
+    public T setAbsoluteXChangeOnSelect(float absoluteXChangeOnSelect) {
+        setProportionalXChangeOnSelect(absoluteXChangeOnSelect / getWidth());
+        return (T)this;
+    }
+
     public T resetXChangeOnSelect() {
-        return setXChangeOnSelect(defaultXChangeOnSelect);
+        return setProportionalXChangeOnSelect(defaultProportionalXChangeOnSelect);
     }
 
     public T setFaceUp(boolean faceUp) {
@@ -712,12 +722,12 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return baseRect.getOriginYProportion();
     }
 
-    public float getYChangeOnSelect() {
-        return YChangeOnSelect;
+    public float getProportionalYChangeOnSelect() {
+        return proportionalYChangeOnSelect;
     }
 
-    public float getXChangeOnSelect() {
-        return XChangeOnSelect;
+    public float getProportionalXChangeOnSelect() {
+        return proportionalXChangeOnSelect;
     }
 
     // Display size/position:

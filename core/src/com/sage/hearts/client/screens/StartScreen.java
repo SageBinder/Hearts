@@ -16,7 +16,7 @@ import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 import com.sage.hearts.utils.renderable.RenderableCardEntity;
-import com.sage.hearts.utils.renderable.RenderableCardList;
+import com.sage.hearts.utils.renderable.RenderableCardGroup;
 
 public class StartScreen implements Screen, InputProcessor {
     private HeartsGame game;
@@ -26,7 +26,7 @@ public class StartScreen implements Screen, InputProcessor {
     private SpriteBatch batch;
 
     private RenderableHeartsCard test = new RenderableHeartsCard(Rank.QUEEN, Suit.SPADES);
-    private RenderableCardList<RenderableHeartsCard> cards = new RenderableCardList<>();
+    private RenderableCardGroup<RenderableHeartsCard> cards = new RenderableCardGroup<>();
 
     public StartScreen(HeartsGame game, GameState gameState) {
         this.game = game;
@@ -51,10 +51,12 @@ public class StartScreen implements Screen, InputProcessor {
                 HeartsGame.BACKGROUND_COLOR.g,
                 HeartsGame.BACKGROUND_COLOR.b,
                 HeartsGame.BACKGROUND_COLOR.a);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT
+                | GL20.GL_DEPTH_BUFFER_BIT
+                | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
 
         test.entity().rotateDeg(delta * 360 / 10);
-        cards.forEach(c -> c.entity().rotateDeg(delta * 360));
+        cards.rotation += (delta);
 
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
@@ -71,6 +73,10 @@ public class StartScreen implements Screen, InputProcessor {
         test.entity()
                 .setPosition(viewport.getWorldWidth() / 2, viewport.getWorldHeight() / 2)
                 .setHeight(viewport.getWorldHeight() / 20);
+        cards.regionWidth = Math.min(viewport.getWorldHeight(), viewport.getWorldWidth()) / 2;
+        cards.cardHeight = viewport.getWorldHeight() / 15;
+        cards.pos.x = (viewport.getWorldWidth() - cards.regionWidth) / 2;
+        cards.pos.y = (viewport.getWorldHeight() - cards.cardHeight) / 2;
     }
 
     @Override

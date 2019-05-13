@@ -18,7 +18,7 @@ public class RenderableHand<T extends Card & RenderableCard> extends RenderableC
         super.cardHeight = Gdx.graphics.getHeight() * cardHeightProportion;
     }
 
-    public RenderableHand(RenderableCardList<T> cards) {
+    public RenderableHand(Collection<? extends T> cards) {
         super(cards);
         super.cardHeight = Gdx.graphics.getHeight() * cardHeightProportion;
     }
@@ -30,6 +30,7 @@ public class RenderableHand<T extends Card & RenderableCard> extends RenderableC
 
     @Override
     public void render(SpriteBatch batch, Viewport viewport, boolean renderBase) {
+        super.rotation = 0;
         super.cardHeight = viewport.getWorldHeight() * cardHeightProportion;
         super.regionWidth = viewport.getWorldWidth()
                 - (viewport.getWorldWidth() * leftPaddingProportion)
