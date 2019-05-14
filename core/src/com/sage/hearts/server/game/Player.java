@@ -46,25 +46,22 @@ public class Player {
         input = new DataInputStream(socket.getInputStream());
 
         packetQueueFillerThread = new Thread(() -> {
-            while(true) {
-                ClientPacket packet;
+            while(socketIsConnected()) {
                 try {
                     int packetSize = input.readInt();
-                    packet = ClientPacket.fromBytes(input.readNBytes(packetSize));
-                    initialPacketHandler(packet);
+                    ClientPacket packet = ClientPacket.fromBytes(input.readNBytes(packetSize));
+                    if(initialPacketHandler(packet)) {
+                        try {
+                            packetQueue.add(packet);
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                 } catch(IOException e) {
-                    socket.dispose();
-                    packetQueue.add(new PlayerDisconnectedItem());
-                    e.printStackTrace(); // TODO: Should maybe do something else here?
+                    dropConnection();
+                    e.printStackTrace();
                     return; // I think IOException means the player disconnected, so the queue filler thread can exit
                 } catch(SerializationException | IllegalArgumentException | OutOfMemoryError e) {
-                    e.printStackTrace();
-                    continue;
-                }
-
-                try {
-                    packetQueue.add(packet);
-                } catch(Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -72,30 +69,31 @@ public class Player {
         packetQueueFillerThread.start();
     }
 
-    private void initialPacketHandler(final ClientPacket packet) {
+    private synchronized boolean initialPacketHandler(final ClientPacket packet) {
         if(packet.networkCode != null) {
             PacketHandler handler = initialPacketHandlers.get(packet.networkCode);
             if(handler != null) {
-                handler.handle(packet);
+                return handler.handle(packet);
             }
         }
+        return true;
     }
 
     // PacketHandler code will be run by packetQueueFillerThread
-    public void setInitialPacketHandlerForCode(ClientCode code, PacketHandler handler) {
+    public synchronized void setInitialPacketHandlerForCode(ClientCode code, PacketHandler handler) {
         initialPacketHandlers.put(code, handler);
     }
 
-    public void resetInitialPacketHandlers() {
+    public synchronized void resetInitialPacketHandlers() {
         initialPacketHandlers.clear();
     }
 
-    public void resetForNewRound() {
+    public synchronized void resetForNewRound() {
         hand.clear();
         collectedPointCards.clear();
     }
 
-    public void sendPacket(final ServerPacket packet) throws SerializationException, PlayerDisconnectedException {
+    public synchronized void sendPacket(final ServerPacket packet) throws SerializationException, PlayerDisconnectedException {
         if(!socketIsConnected()) {
             throw new PlayerDisconnectedException(this);
         }
@@ -105,12 +103,12 @@ public class Player {
             output.write(packetBytes);
             output.flush();
         } catch(IOException e) {
-            socket.dispose();
+            dropConnection();
             throw new PlayerDisconnectedException(this);
         }
     }
 
-    public Optional<ClientPacket> getPacket() throws PlayerDisconnectedException {
+    public synchronized Optional<ClientPacket> getPacket() throws PlayerDisconnectedException {
         ClientPacket ret = packetQueue.poll();
         if(ret instanceof PlayerDisconnectedItem) {
             throw new PlayerDisconnectedException(this);
@@ -119,7 +117,7 @@ public class Player {
         }
     }
 
-    public ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
+    public synchronized ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
         ClientPacket ret = packetQueue.take();
         if(ret instanceof PlayerDisconnectedItem) {
             throw new PlayerDisconnectedException(this);
@@ -130,7 +128,7 @@ public class Player {
         }
     }
 
-    public Optional<ClientPacket> waitForPacket(long timeout, TimeUnit unit)
+    public synchronized Optional<ClientPacket> waitForPacket(long timeout, TimeUnit unit)
             throws InterruptedException, PlayerDisconnectedException {
         if(timeout <= 0) {
             return Optional.of(waitForPacket());
@@ -146,48 +144,53 @@ public class Player {
         }
     }
 
-    public int getPlayerNum() {
+    public synchronized int getPlayerNum() {
         return playerNum;
     }
 
-    public void setPlayerNum(int playerNum) {
+    public synchronized void setPlayerNum(int playerNum) {
         this.playerNum = playerNum;
     }
 
-    public String getName() {
+    public synchronized String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public synchronized void setName(String name) {
         this.name = name;
     }
 
-    public boolean isHost() {
+    public synchronized boolean isHost() {
         return isHost;
     }
 
-    public void setHost(boolean host) {
+    public synchronized void setHost(boolean host) {
         this.isHost = host;
     }
 
-    public boolean socketIsConnected() {
+    public synchronized boolean socketIsConnected() {
         return socket.isConnected();
     }
 
-    public void ping() throws SerializationException, PlayerDisconnectedException {
+    public synchronized void ping() throws SerializationException, PlayerDisconnectedException {
         sendPacket(ServerPacket.pingPacket());
     }
 
-    public int getAccumulatedPoints() {
+    public synchronized int getAccumulatedPoints() {
         return accumulatedPoints;
     }
 
-    public void setAccumulatedPoints(int accumulatedPoints) {
+    public synchronized void setAccumulatedPoints(int accumulatedPoints) {
         this.accumulatedPoints = accumulatedPoints;
     }
 
     public synchronized void interruptPacketWaiting() {
         packetQueue.add(new InterruptItem());
+    }
+
+    public synchronized void dropConnection() {
+        socket.dispose();
+        packetQueue.add(new PlayerDisconnectedItem());
     }
 
     private abstract class PoisonQueueItem extends ClientPacket {
@@ -203,6 +206,7 @@ public class Player {
     }
 
     public interface PacketHandler {
-        void handle(final ClientPacket packet);
+        // Returns whether or not the packet should be propagated to the packetQueue
+        boolean handle(final ClientPacket packet);
     }
 }

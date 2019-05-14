@@ -29,7 +29,7 @@ public class ClientConnection extends Thread {
 
     private volatile boolean quit = false;
 
-    ClientConnection(int port, String serverIP, String playerName, HeartsGame game) {
+    public ClientConnection(String serverIP, int port, String playerName, HeartsGame game) {
         this.port = port;
         this.serverIP = serverIP;
         this.game = game;
@@ -53,7 +53,8 @@ public class ClientConnection extends Thread {
                 packet = ServerPacket.fromBytes(input.readNBytes(packetSize));
             } catch(IOException e) {
                 quit();
-                continue;
+                packetQueue.add(new LostConnectionToServerQueueItem());
+                break;
             } catch(SerializationException | IllegalArgumentException | OutOfMemoryError e) {
                 e.printStackTrace();
                 continue;
@@ -74,9 +75,14 @@ public class ClientConnection extends Thread {
         output.flush();
     }
 
-    public Optional<ServerPacket> getPacket() {
+    public Optional<ServerPacket> getPacket() throws LostConnectionToServerException {
         synchronized(packetQueue) {
-            return Optional.ofNullable(packetQueue.poll());
+            ServerPacket item = packetQueue.poll();
+            if(item instanceof LostConnectionToServerQueueItem) {
+                throw new LostConnectionToServerException();
+            } else {
+                return Optional.ofNullable(packetQueue.poll());
+            }
         }
     }
 
@@ -87,5 +93,9 @@ public class ClientConnection extends Thread {
         } catch(IOException e) {
             return false;
         }
+    }
+
+    private class LostConnectionToServerQueueItem extends ServerPacket {
+
     }
 }

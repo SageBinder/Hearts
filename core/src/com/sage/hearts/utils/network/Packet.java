@@ -4,11 +4,12 @@ import com.badlogic.gdx.utils.SerializationException;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.Serializable;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class Packet<T extends NetworkCode> implements Serializable {
     public T networkCode;
-    public final Hashtable<Serializable, Serializable> data = new Hashtable<>();
+    public final Map<Serializable, Serializable> data = new HashMap<>();
 
     public Packet() {
     }

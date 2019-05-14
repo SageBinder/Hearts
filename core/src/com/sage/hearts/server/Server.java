@@ -3,6 +3,7 @@ package com.sage.hearts.server;
 import com.badlogic.gdx.Net;
 import com.badlogic.gdx.net.NetJavaServerSocketImpl;
 import com.badlogic.gdx.net.ServerSocketHints;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.sage.hearts.client.network.ClientCode;
 import com.sage.hearts.server.game.GameState;
 import com.sage.hearts.server.game.Player;
@@ -30,6 +31,8 @@ public class Server extends Thread {
     private Player host = null;
     private NetJavaServerSocketImpl serverSocket;
 
+    private volatile boolean closed = false;
+
     public Server(int port) {
         this.port = port;
 
@@ -46,7 +49,7 @@ public class Server extends Thread {
         Timer pingerTimer = new Timer();
         pingerTimer.scheduleAtFixedRate(pingerTask, PING_PERIOD, PING_PERIOD);
 
-        while(true) {
+        while(!closed) {
             // This inner loop breaks with gameState.lock still locked when the round is being started
             while(true) {
                 if(startRoundFlag) {
@@ -85,9 +88,12 @@ public class Server extends Thread {
                 gameState.lock.unlock();
             }
         }
+
+        serverSocket.dispose();
+        pingerTimer.cancel();
     }
 
-    public void sendPlayersToAllUntilNoDisconnections() {
+    private void sendPlayersToAllUntilNoDisconnections() {
         while(true) {
             try {
                 gameState.players.sendPlayersToAll();
@@ -107,6 +113,7 @@ public class Server extends Thread {
             } else {
                 player.sendPacket(new ServerPacket(ServerCode.UNSUCCESSFUL_NAME_CHANGE));
             }
+            return false; // This packet does not need to be put into the player's packetQueue
         });
         player.setInitialPacketHandlerForCode(ClientCode.START_GAME, packet -> {
             if(host == player && !startRoundFlag) {
@@ -115,14 +122,28 @@ public class Server extends Thread {
             } else {
                 player.sendPacket(new ServerPacket(ServerCode.COULD_NOT_START_GAME));
             }
+            return false; // This packet does not need to be put into the player's packetQueue
         });
+        player.setInitialPacketHandlerForCode(ClientCode.PING, packet -> false);
+    }
+
+    public void close() {
+        // We drop every player connection which should (?) make RoundRunner.playRound() throw a PlayerDisconnectedException.
+        // When the main server loop repeats, it will query the value of closed and will exit.
+        gameState.players.forEach(Player::dropConnection);
+        closed = true;
     }
 
     Runnable connectionAcceptor = new Runnable() {
         @Override
         public void run() {
-            while(true) {
-                Player newPlayer = new Player(0, serverSocket.accept(null));
+            while(!closed) {
+                Player newPlayer;
+                try {
+                    newPlayer = new Player(0, serverSocket.accept(null));
+                } catch(GdxRuntimeException e) {
+                    continue;
+                }
                 // If round is started, we can immediately end the connection
                 if(gameState.roundStarted) { // gameState.roundStarted is volatile so we don't need to lock
                     newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_DENIED));

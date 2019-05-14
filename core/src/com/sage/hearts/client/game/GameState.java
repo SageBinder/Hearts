@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.sage.hearts.client.HeartsGame;
 import com.sage.hearts.client.network.ClientConnection;
 import com.sage.hearts.client.network.ClientPacket;
+import com.sage.hearts.client.network.LostConnectionToServerException;
 import com.sage.hearts.server.network.ServerCode;
 import com.sage.hearts.server.network.ServerPacket;
 import com.sage.hearts.utils.renderable.RenderableCard;
@@ -41,11 +42,19 @@ public class GameState {
     }
 
     public boolean update(ClientConnection client) {
+        if(client == null) {
+            return false;
+        }
+
         boolean didUpdate = false;
         Optional<ServerPacket> p;
-        while((p = client.getPacket()).isPresent()) {
-            applyUpdate(p.get());
-            didUpdate = true;
+        try {
+            while((p = client.getPacket()).isPresent()) {
+                applyUpdate(p.get());
+                didUpdate = true;
+            }
+        } catch(LostConnectionToServerException e) {
+            updater.lostConnectionToServer();
         }
         return didUpdate;
     }
@@ -65,9 +74,29 @@ public class GameState {
             this.data = data;
             try {
                 switch(lastServerCode) {
+                    // General codes
+                case PING:
+                    ping();
+                    break;
+                case CONNECTION_ACCEPTED:
+                    connectionAccepted();
+                    break;
+                case CONNECTION_DENIED:
+                    connectionDenied();
+                    break;
+                case COULD_NOT_START_GAME:
+                    couldNotStartGame();
+                    break;
                 case WAIT_FOR_PLAYERS:
                     waitForPlayers();
                     break;
+
+                    // Trick codes:
+                case TRICK_START:
+                    trickStart();
+                    break;
+
+                    // Round codes:
                 case ROUND_START:
                     roundStart();
                     break;
@@ -80,6 +109,29 @@ public class GameState {
                         "Oh shit encountered ClassCastException in Updater.update(), this is VERY BAD");
                 e.printStackTrace();
             }
+        }
+
+        // --- GENERAL CODES ---
+        // Just here in case anything needs to be done on ping (and to keep the switch pattern)
+        private void ping() {
+        }
+
+        private void connectionAccepted() {
+            message = "Joined successfully!";
+        }
+
+        private void connectionDenied() {
+            message = "Error joining game: connection denied. Maybe the game is full or has already started?";
+            game.showStartScreen();
+        }
+
+        private void playerDisconnected() {
+            message = "A player has disconnected!";
+            game.showLobbyScreen();
+        }
+
+        private void couldNotStartGame() {
+            message = "Error: cannot start game. Either there aren't enough players or the game is already running.";
         }
 
         private void waitForPlayers() {
@@ -105,6 +157,12 @@ public class GameState {
             }
         }
 
+        // --- TRICK CODES ---
+        private void trickStart() {
+            // TODO trickStart()
+        }
+
+        // --- ROUND CODES ---
         private void roundStart() {
             Arrays.stream(players).forEach(p -> {
                 if(p != null) {
@@ -132,9 +190,9 @@ public class GameState {
             game.showGameScreen();
         }
 
-        private void playerDisconnected() {
-            message = "A player has disconnected!";
-            game.showLobbyScreen();
+        private void lostConnectionToServer() {
+            message = "The connection to the host has been lost.";
+            game.showStartScreen();
         }
     }
 
