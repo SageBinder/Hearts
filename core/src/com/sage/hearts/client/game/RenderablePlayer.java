@@ -58,6 +58,13 @@ public class RenderablePlayer implements Renderable {
         this.play = play;
     }
 
+    public void disposePlay() {
+        if(this.play != null) {
+            this.play.dispose();
+        }
+        this.play = null;
+    }
+
     boolean isHost() {
         return isHost;
     }
@@ -75,6 +82,7 @@ public class RenderablePlayer implements Renderable {
     }
 
     public void disposeCards() {
+        collectedPointCards.disposeAll();
         collectedPointCards.clear();
         play.dispose();
         play = null;

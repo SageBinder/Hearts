@@ -126,6 +126,7 @@ public class StartScreen implements Screen, InputProcessor {
     @Override
     public boolean keyTyped(char character) {
         if(character == 'd') {
+            cards.disposeAll();
             cards.clear();
         } else if(Character.isDigit(character)) {
             keys[0] = keys[1];

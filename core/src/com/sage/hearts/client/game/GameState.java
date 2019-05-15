@@ -1,24 +1,34 @@
 package com.sage.hearts.client.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.sage.hearts.client.HeartsGame;
 import com.sage.hearts.client.network.ClientConnection;
 import com.sage.hearts.client.network.ClientPacket;
 import com.sage.hearts.client.network.LostConnectionToServerException;
 import com.sage.hearts.server.network.ServerCode;
 import com.sage.hearts.server.network.ServerPacket;
+import com.sage.hearts.utils.card.InvalidCardException;
+import com.sage.hearts.utils.card.Rank;
+import com.sage.hearts.utils.card.Suit;
+import com.sage.hearts.utils.hearts.HeartsCard;
 import com.sage.hearts.utils.renderable.RenderableCard;
 import com.sage.hearts.utils.renderable.RenderableCardList;
 import com.sage.hearts.utils.renderable.RenderableHand;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class GameState {
-    private Updater updater = new Updater();
+    // Light Goldenrod
+    public static final Color winningPlayColor = new Color(238f / 255f, 221f / 255f, 130f / 255f, 1f);
 
+    private Updater updater = new Updater();
     private final HeartsGame game;
+
+    private final RenderableCardList<RenderableHeartsCard> lastWarheads = new RenderableCardList<>();
 
     public final RenderablePlayer[] players = new RenderablePlayer[4];
 
@@ -31,10 +41,7 @@ public class GameState {
     public final RenderableHand<RenderableHeartsCard> thisPlayerHand = new RenderableHand<>();
 
     public ServerCode lastServerCode;
-
     public String message = "";
-    public String buttonText = "";
-
     public boolean heartsBroke = false;
 
     public GameState(HeartsGame game) {
@@ -63,56 +70,84 @@ public class GameState {
         updater.update(updatePacket.networkCode, updatePacket.data);
     }
 
-    private Optional<RenderablePlayer> getPlayerByPlayerNum(int playerNum) {
-        return Arrays.stream(players).filter(p -> p.getPlayerNum() == playerNum).findFirst();
+    private Optional<RenderablePlayer> getPlayerByPlayerNum(Integer playerNum) {
+        return (playerNum == null)
+                ? Optional.empty()
+                : Arrays.stream(players).filter(p -> p.getPlayerNum() == playerNum).findFirst();
     }
 
     private class Updater {
-        private Map data = null;
-        private void update(ServerCode serverCode, Map data) {
+        private Map<Serializable, Serializable> data = null;
+        private void update(ServerCode serverCode, Map<Serializable, Serializable> data) {
             lastServerCode = serverCode;
             this.data = data;
             try {
                 switch(lastServerCode) {
                     // General codes
                 case PING:
-                    ping();
-                    break;
+                    ping(); break;
                 case CONNECTION_ACCEPTED:
-                    connectionAccepted();
-                    break;
+                    connectionAccepted(); break;
                 case CONNECTION_DENIED:
-                    connectionDenied();
-                    break;
+                    connectionDenied(); break;
+                case PLAYER_DISCONNECTED:
+                    playerDisconnected(); break;
                 case COULD_NOT_START_GAME:
-                    couldNotStartGame();
-                    break;
+                    couldNotStartGame(); break;
+                case UNSUCCESSFUL_NAME_CHANGE:
+                    unsuccessfulNameChange(); break;
                 case WAIT_FOR_PLAYERS:
-                    waitForPlayers();
-                    break;
+                    waitForPlayers(); break;
 
                     // Trick codes:
                 case TRICK_START:
-                    trickStart();
-                    break;
+                    trickStart(); break;
+                case PLAY_TWO_OF_CLUBS:
+                    playTwoOfClubs(); break;
+                case MAKE_PLAY:
+                    makePlay(); break;
+                case INVALID_PLAY:
+                    invalidPlay(); break;
+                case SUCCESSFUL_PLAY:
+                    successfulPlay(); break;
+                case WAIT_FOR_TURN_PLAYER:
+                    waitForTurnPlayer(); break;
+                case WAIT_FOR_NEW_PLAY:
+                    waitForNewPlay(); break;
+                case WAIT_FOR_LEADING_PLAYER:
+                    waitForLeadingPlayer(); break;
+                case TRICK_END:
+                    trickEnd(); break;
 
                     // Round codes:
                 case ROUND_START:
-                    roundStart();
-                    break;
-                case PLAYER_DISCONNECTED:
-                    playerDisconnected();
-                    break;
+                    roundStart(); break;
+                case WAIT_FOR_HAND:
+                    waitForHand(); break;
+                case SEND_WARHEADS:
+                    sendWarheads(); break;
+                case INVALID_WARHEADS:
+                    invalidWarheads(); break;
+                case SUCCESSFUL_WARHEADS:
+                    successfulWarheads(); break;
+                case WAIT_FOR_WARHEADS:
+                    waitForWarheads(); break;
+                case ROUND_END:
+                    roundEnd(); break;
                 }
-            } catch(ClassCastException e) {
+            } catch(ClassCastException | NullPointerException | InvalidServerPacketException e) {
                 Gdx.app.log("Updater.update()",
-                        "Oh shit encountered ClassCastException in Updater.update(), this is VERY BAD");
+                        "Oh shit encountered ClassCastException/InvalidServerPacketException/NullPointerException "
+                                + "in Updater.update(), this is VERY BAD\n"
+                                + e.getMessage());
                 e.printStackTrace();
+                message = e.getClass() + ": " + e.getMessage();
+                // TODO: When encountering an error here, request the full game state from the server
             }
         }
 
         // --- GENERAL CODES ---
-        // Just here in case anything needs to be done on ping (and to keep the switch pattern)
+        // ping() is just here in case anything needs to be done on ping (and to keep the switch pattern)
         private void ping() {
         }
 
@@ -132,6 +167,10 @@ public class GameState {
 
         private void couldNotStartGame() {
             message = "Error: cannot start game. Either there aren't enough players or the game is already running.";
+        }
+
+        private void unsuccessfulNameChange() {
+            message = "Error: invalid name.";
         }
 
         private void waitForPlayers() {
@@ -159,21 +198,105 @@ public class GameState {
 
         // --- TRICK CODES ---
         private void trickStart() {
-            // TODO trickStart()
+            Arrays.stream(players).forEach(RenderablePlayer::disposePlay);
+        }
+
+        private void playTwoOfClubs() {
+            thisPlayer.disposePlay();
+            thisPlayer.setPlay(thisPlayerHand.getAndRemove(Rank.TWO, Suit.CLUBS)
+                    .orElse(new RenderableHeartsCard(Rank.TWO, Suit.CLUBS)));
+            message = "You had the two of clubs";
+        }
+
+        private void makePlay() {
+            message = "It's your turn.";
+            turnPlayer = thisPlayer;
+        }
+
+        private void invalidPlay() {
+            message = "Error: invalid play. Try again.";
+            if(thisPlayer.getPlay().isPresent()) {
+                thisPlayer.getPlay().get().setSelected(true).setSelectable(true);
+                thisPlayerHand.add(thisPlayer.getPlay().get());
+                thisPlayer.setPlay(null);
+            }
+        }
+
+        private void successfulPlay() {
+            message = "Play successfully made.";
+        }
+
+        private void waitForTurnPlayer() {
+            turnPlayer = getPlayerByPlayerNum((Integer)data.get("player"))
+                    .orElseThrow(() -> new InvalidServerPacketException(
+                            "waitForTurnPlayer() - No player found with player num "
+                                    + data.get("player")
+                                    + " sent by server for turn player"));
+            message = "It's "
+                    + turnPlayer.getName()
+                    + (turnPlayer.getName().charAt(turnPlayer.getName().length() - 1) == 's' ? "'" : "'s") // Pluralizing
+                    + " turn";
+        }
+
+        private void waitForNewPlay() {
+            RenderablePlayer newPlayPlayer = getPlayerByPlayerNum((Integer)data.get("player"))
+                    .orElseThrow(() -> new InvalidServerPacketException(
+                            "waitForNewPlay() - No player found with player num "
+                                    + data.get("player")
+                                    + " sent by server"));
+            RenderableHeartsCard newPlay;
+            try {
+                newPlay = new RenderableHeartsCard((Integer)data.get("play"));
+            } catch(InvalidCardException e) {
+                throw new InvalidServerPacketException("waitForNewPlay() - server sent invalid card num " + data.get("play"));
+            }
+
+            newPlayPlayer.disposePlay(); // newPlayPlayer.play should already be null but dispose just in case
+            newPlayPlayer.setPlay(newPlay);
+        }
+
+        private void waitForLeadingPlayer() {
+            leadingPlayer = getPlayerByPlayerNum((Integer)data.get("player"))
+                    .orElseThrow(() -> new InvalidServerPacketException(
+                            "waitForLeadingPlayer() - No player found with player num "
+                                    + data.get("player")
+                                    + " sent by server for leading player"
+                    ));
+            Arrays.stream(players).forEach(p ->
+                    p.getPlay().ifPresent(c ->
+                            c.entity.setFaceBackgroundColor(c.entity.defaultFaceUnselectedBackgroundColor)));
+            leadingPlayer.getPlay().ifPresent(c -> c.entity.setFaceBackgroundColor(winningPlayColor));
+        }
+
+        private void trickEnd() {
+            RenderablePlayer trickWinner = getPlayerByPlayerNum((Integer)data.get("winner"))
+                    .orElseThrow(() -> new InvalidServerPacketException(
+                            "trickEnd() - No player found with player num "
+                                    + data.get("winner")
+                                    + " sent by server for trick winner"
+                    ));
+            List<Integer> pointCardNumsInTrick = (List<Integer>)data.get("pointcards");
+            RenderableCardList<RenderableHeartsCard> pointCardsInTrick;
+            try {
+                pointCardsInTrick = pointCardNumsInTrick.stream()
+                        .map(RenderableHeartsCard::new)
+                        .collect(Collectors.toCollection(RenderableCardList::new));
+            } catch(InvalidCardException e) {
+                throw new InvalidServerPacketException("trickEnd() - server sent an invalid card num for a trick point card");
+            }
+            trickWinner.collectedPointCards.addAll(pointCardsInTrick);
+            message = trickWinner.getName() + " won the trick and collects "
+                    + pointCardsInTrick.stream().mapToInt(HeartsCard::getPoints).sum()
+                    + " points";
         }
 
         // --- ROUND CODES ---
         private void roundStart() {
-            Arrays.stream(players).forEach(p -> {
-                if(p != null) {
-                    p.disposeCards();
-                }
-            });
+            Arrays.stream(players).filter(Objects::nonNull).forEach(RenderablePlayer::disposeCards);
             turnPlayer = null;
             leadingPlayer = null;
             heartsBroke = false;
             message = "";
-            buttonText = "";
 
             warheadMap.clear();
             warheadMap.putAll((HashMap<Integer, Integer>)data.get("warheadmap"));
@@ -181,13 +304,66 @@ public class GameState {
             int[] playerOrder = (int[])data.get("playerorder");
             RenderablePlayer[] newPlayerArr = new RenderablePlayer[players.length];
             for(int i = 0; i < newPlayerArr.length; i++) {
-                newPlayerArr[i] = getPlayerByPlayerNum(playerOrder[i]).orElseThrow(InvalidServerPacketException::new);
+                final int ii = i;
+                newPlayerArr[i] = getPlayerByPlayerNum(playerOrder[i])
+                        .orElseThrow(() -> new InvalidServerPacketException(
+                                "roundStart() - No player found with player num "
+                                        + playerOrder[ii]
+                                        + " sent by server for player order"));
             }
-            for(int i = 0; i < newPlayerArr.length; i++) {
-                players[i] = newPlayerArr[i];
-            }
+            System.arraycopy(newPlayerArr, 0, players, 0, newPlayerArr.length);
 
             game.showGameScreen();
+        }
+
+        private void waitForHand() {
+            RenderableCardList<RenderableHeartsCard> newHand;
+            try {
+                newHand = ((List<Integer>)data.get("hand")).stream()
+                        .map(RenderableHeartsCard::new)
+                        .collect(Collectors.toCollection(RenderableCardList::new));
+            } catch(InvalidCardException e) {
+                throw new InvalidServerPacketException("waitForHand() - Server sent an invalid card num for a card in hand");
+            }
+            thisPlayerHand.disposeAll();
+            thisPlayerHand.clear();
+            thisPlayerHand.addAll(newHand);
+        }
+
+        private void sendWarheads() {
+            message = "Select 3 cards to send to "
+                    + getPlayerByPlayerNum(warheadMap.get(thisPlayer.getPlayerNum()))
+                    .orElseThrow(() -> new InvalidServerPacketException(
+                            "sendWarheads() - No player found with player num "
+                                    + warheadMap.get(thisPlayer.getPlayerNum())
+                                    + ", gotten from warheadMap.get(" + thisPlayer.getPlayerNum() + ")"
+                    )).getName();
+        }
+
+        private void invalidWarheads() {
+            message = "Error: invalid warheads. Try again.";
+            thisPlayerHand.addAll(lastWarheads);
+            lastWarheads.clear();
+        }
+
+        private void successfulWarheads() {
+            message = "Warheads successfully sent.";
+        }
+
+        private void waitForWarheads() {
+            RenderableCardList<RenderableHeartsCard> warheads;
+            try {
+                warheads = ((List<Integer>)data.get("warheads")).stream()
+                        .map(RenderableHeartsCard::new)
+                        .collect(Collectors.toCollection(RenderableCardList::new));
+            } catch(InvalidCardException e) {
+                throw new InvalidServerPacketException("waitForWarheads() - Server sent an invalid card num for a card in warheads");
+            }
+            thisPlayerHand.addAll(warheads);
+        }
+
+        private void roundEnd() {
+            // TODO
         }
 
         private void lostConnectionToServer() {
@@ -196,8 +372,14 @@ public class GameState {
         }
     }
 
-    public class Actions {
+    public final class Actions {
         public void sendWarheads(ClientConnection client) {
+            // This if serves essentially the same purpose as the corresponding guard if in sendPlay()
+            if(!lastWarheads.isEmpty()) {
+                message = "Your warheads are being validated by the server...";
+                return;
+            }
+
             RenderableCardList<RenderableHeartsCard> selectedCards = thisPlayerHand.stream()
                     .filter(RenderableCard::isSelected)
                     .collect(Collectors.toCollection(RenderableCardList::new));
@@ -211,6 +393,7 @@ public class GameState {
                     return;
                 }
                 thisPlayerHand.removeAll(selectedCards);
+                lastWarheads.addAll(selectedCards);
                 message = "Sending warheads...";
             } else {
                 message = "You must select 3 cards to send";
@@ -218,19 +401,34 @@ public class GameState {
         }
 
         public void sendPlay(ClientConnection client) {
+            // This else/if prevents the player from making two plays in quick succession,
+            // which would overwrite thisPlayer.getPlay() and would send the server both plays.
+            // The server might accept the first play, but on the client side the first play would have been overwritten
+            // by the second play. The second play would be evaluated by the server on the next turn.
+            // This would obviously cause the server and client to go out of sync and everything would break.
+            if(thisPlayer != turnPlayer) {
+                message = "It's not your turn.";
+            } else if(thisPlayer.getPlay().isPresent()) {
+                message = "Your play is being validated by the server...";
+                return;
+            }
+
             RenderableCardList<RenderableHeartsCard> selectedCards = thisPlayerHand.stream()
                     .filter(RenderableCard::isSelected)
                     .collect(Collectors.toCollection(RenderableCardList::new));
             if(selectedCards.size() == 1) {
+                RenderableHeartsCard card = selectedCards.get(0);
                 ClientPacket packet = new ClientPacket();
-                packet.data.put("play", selectedCards.get(0).getCardNum());
+                packet.data.put("play", card.getCardNum());
                 try {
                     client.sendPacket(packet);
                 } catch(IOException e) {
                     message = "There was an error while trying to contact the server... try again";
                     return;
                 }
-                thisPlayerHand.remove(selectedCards.get(0));
+                card.setSelected(false).setSelectable(false);
+                thisPlayerHand.remove(card);
+                thisPlayer.setPlay(card);
                 message = "Sending play...";
             } else {
                 message = "You must select 1 card to play";

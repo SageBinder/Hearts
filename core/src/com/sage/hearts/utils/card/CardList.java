@@ -3,6 +3,7 @@ package com.sage.hearts.utils.card;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ListIterator;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CardList<T extends Card> extends ArrayList<T> {
@@ -38,6 +39,16 @@ public class CardList<T extends Card> extends ArrayList<T> {
             removedAny |= remove(c.getRank(), c.getSuit());
         }
         return removedAny;
+    }
+
+    public Optional<T> getAndRemove(Rank rank, Suit suit) {
+        for(T c : this) {
+            if(c.getRank() == rank && c.getSuit() == suit) {
+                remove(c);
+                return Optional.of(c);
+            }
+        }
+        return Optional.empty();
     }
 
     public boolean contains(Rank rank, Suit suit) {
@@ -84,7 +95,7 @@ public class CardList<T extends Card> extends ArrayList<T> {
         return listIterator(size());
     }
 
-    public static interface CardSupplier<T> {
+    public interface CardSupplier<T> {
         T get(Rank rank, Suit suit);
     }
 }
