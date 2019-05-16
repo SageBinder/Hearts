@@ -2,10 +2,9 @@ package com.sage.hearts.client.screens;
 
 import com.badlogic.gdx.Screen;
 import com.sage.hearts.client.HeartsGame;
-import com.sage.hearts.client.game.GameState;
 
 public class JoinGameScreen implements Screen {
-    public JoinGameScreen(HeartsGame game, GameState gameState) {
+    public JoinGameScreen(HeartsGame game) {
     }
 
     @Override

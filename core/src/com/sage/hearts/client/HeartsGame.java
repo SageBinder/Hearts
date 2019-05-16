@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.dosse.upnp.UPnP;
 import com.sage.hearts.client.game.GameState;
 import com.sage.hearts.client.network.ClientConnection;
@@ -22,19 +23,21 @@ public class HeartsGame extends Game {
             joinGameScreen,
             optionsScreen,
             lobbyScreen,
-            gameScreen;
+            gameScreen,
+            playgroundScreen;
 
     @Override
     public void create() {
         Gdx.graphics.setTitle("❤︎❤︎❤︎");
 
         gameState = new GameState(this);
-        startScreen = new StartScreen(this, gameState);
-        createGameScreen = new CreateGameScreen(this, gameState);
-        joinGameScreen = new JoinGameScreen(this, gameState);
-        optionsScreen = new OptionsScreen(this, gameState);
-        lobbyScreen = new LobbyScreen(this, gameState);
-        gameScreen = new GameScreen(this, gameState);
+        startScreen = new StartScreen(this);
+        createGameScreen = new CreateGameScreen(this);
+        joinGameScreen = new JoinGameScreen(this);
+        optionsScreen = new OptionsScreen(this);
+        lobbyScreen = new LobbyScreen(this);
+        gameScreen = new GameScreen(this);
+        playgroundScreen = new PlaygroundScreen(this);
         setScreen(startScreen);
     }
 
@@ -62,6 +65,10 @@ public class HeartsGame extends Game {
         setScreen(gameScreen);
     }
 
+    public void showPlaygroundScren() {
+        setScreen(playgroundScreen);
+    }
+
     public void joinGame(String serverIP, int port, String name) {
         clientConnection = new ClientConnection(serverIP, port, name, this);
     }
@@ -86,7 +93,21 @@ public class HeartsGame extends Game {
         return clientConnection;
     }
 
+    public GameState getGameState() {
+        return gameState;
+    }
+
     @Override
     public void dispose() {
+    }
+
+    public static void clearScreen() {
+        Gdx.gl.glClearColor(HeartsGame.BACKGROUND_COLOR.r,
+                HeartsGame.BACKGROUND_COLOR.g,
+                HeartsGame.BACKGROUND_COLOR.b,
+                HeartsGame.BACKGROUND_COLOR.a);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT
+                | GL20.GL_DEPTH_BUFFER_BIT
+                | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
     }
 }

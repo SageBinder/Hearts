@@ -363,7 +363,18 @@ public class GameState {
         }
 
         private void roundEnd() {
-            // TODO
+            Map<Integer, Integer> playerPointsMap = (Map<Integer, Integer>)data.get("pointsmap");
+            playerPointsMap.keySet().forEach(playerNum ->
+                    getPlayerByPlayerNum(playerNum)
+                            .orElseThrow(() -> new InvalidServerPacketException(
+                            "roundEnd() - No player found with player num "
+                                    + playerNum
+                                    + " sent by server in playerPointsMap"
+                            )).setAccumulatedPoints(playerPointsMap.get(playerNum)));
+
+            message = "Round over!";
+            Arrays.stream(players)
+                    .forEach(p -> message += "\n" + p.getName() + " has " + p.getAccumulatedPoints() + " points");
         }
 
         private void lostConnectionToServer() {

@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class Server extends Thread {
     public static final int NUM_PLAYERS_TO_START = 4;
     public static final long PING_PERIOD = 1000; // In milliseconds
+    public static final int MAX_PLAYER_NAME_LENGTH = 16;
 
     public final int port;
 
@@ -108,7 +109,8 @@ public class Server extends Thread {
     private void setInitialPacketHandlersForPlayer(Player player) {
         player.setInitialPacketHandlerForCode(ClientCode.NAME, packet -> {
             if(packet.data.get("name") instanceof String && !gameState.roundStarted) {
-                player.setName((String)packet.data.get("name"));
+                String sentName = (String)packet.data.get("name");
+                player.setName(sentName.substring(0, Math.min(sentName.length(), MAX_PLAYER_NAME_LENGTH)));
                 sendPlayersToAllUntilNoDisconnections();
             } else {
                 player.sendPacket(new ServerPacket(ServerCode.UNSUCCESSFUL_NAME_CHANGE));
