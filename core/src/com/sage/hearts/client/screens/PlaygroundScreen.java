@@ -32,7 +32,7 @@ public class PlaygroundScreen implements Screen, InputProcessor {
         this.gameState = game.getGameState();
         viewport = new ExtendViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch = new SpriteBatch();
-        test.entity().setOriginToCenter();
+        test.entity().setOriginToCenter().setSelectable(true);
 
         show();
     }
@@ -49,7 +49,9 @@ public class PlaygroundScreen implements Screen, InputProcessor {
         HeartsGame.clearScreen();
 
         test.entity().rotateDeg(delta * 360 / 10);
-        cards.rotation += (delta);
+        test.update(delta);
+        cards.forEach(c -> c.update(delta));
+//        cards.rotation += (delta);
 
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
@@ -135,6 +137,7 @@ public class PlaygroundScreen implements Screen, InputProcessor {
         var worldPos = viewport.unproject(new Vector2(screenX, screenY));
         if(button == Input.Buttons.LEFT) {
             test.setPosition(worldPos.x - (test.getWidth() / 2f), worldPos.y - (test.getHeight() / 2f));
+            test.entity.mover.stop();
 
             counter = (counter + 1) % 54;
             var toAdd = new RenderableHeartsCard(counter);
@@ -160,12 +163,19 @@ public class PlaygroundScreen implements Screen, InputProcessor {
                     break;
                 }
             }
+            if(test.entity.displayRectContainsPoint(worldPos)) {
+                test.entity.toggleSelected();
+            }
         }
         return false;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        var worldPos = viewport.unproject(new Vector2(screenX, screenY));
+        if(button == Input.Buttons.LEFT) {
+            test.entity().mover.setTargetXY(worldPos.x - (test.getWidth() / 2f), worldPos.y - (test.getHeight() / 2f));
+        }
         return false;
     }
 
@@ -176,6 +186,15 @@ public class PlaygroundScreen implements Screen, InputProcessor {
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
+        var worldPos = viewport.unproject(new Vector2(screenX, screenY));
+        cards.forEach(c -> c.entity.deselect());
+        for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
+            RenderableCardEntity c = i.previous().entity();
+            if(c.displayRectContainsPoint(worldPos) || c.baseRectContainsPoint(worldPos)) {
+                c.setSelected(true);
+                break;
+            }
+        }
         return false;
     }
 

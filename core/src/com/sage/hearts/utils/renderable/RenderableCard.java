@@ -22,6 +22,17 @@ public interface RenderableCard<T extends RenderableCardEntity<? extends T, ? ex
                 originXProportion, originYProportion, rotation);
     }
 
+    default void update(float delta) {
+        if(entity().mover != null) {
+            entity().mover.update(delta);
+        }
+    }
+
+    default T setMover(RenderableCardMover mover) {
+        entity().mover = mover;
+        return entity();
+    }
+
     // Select setters:
     default T setSelectable(boolean selectable) {
         return entity().setSelectable(selectable);

@@ -14,15 +14,12 @@ import com.sage.hearts.utils.card.Card;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 // OH GOD THIS CLASS LITERALLY MAKES ME WANT TO VOMIT AAAAAAAAHHHHHHHH
 
 @SuppressWarnings({"unchecked", "WeakerAccess", "unused", "UnusedReturnValue"})
-public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends Card> {
+public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends Card & RenderableCard> {
     public static final int CARD_HEIGHT_IN_PIXELS = 969;
     public static final int CARD_WIDTH_IN_PIXELS = 666;
     public static final float HEIGHT_TO_WIDTH_RATIO = (float)CARD_HEIGHT_IN_PIXELS / (float)CARD_WIDTH_IN_PIXELS;
@@ -41,7 +38,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     public final float defaultBackDesignWidthScale = ((float)CARD_WIDTH_IN_PIXELS - (2 * (float)defaultBackBorderThicknessInPixels)) / (float)CARD_WIDTH_IN_PIXELS;
 
     public final float defaultProportionalYChangeOnSelect = 0.9f; // Proportional to height
-    public final float defaultProportionalXChangeOnSelect = 0.0f; // Proportional to width
+    public final float defaultProportionalXChangeOnSelect = 0.05f; // Proportional to width
 
     public final Color defaultFaceBorderColor = new Color(0, 0, 0, 1);
     public final Color defaultBackBorderColor = new Color(1, 1, 1, 1);
@@ -67,8 +64,11 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     private float backDesignHeightScale = defaultBackDesignHeightScale;
     private float backDesignWidthScale = defaultBackDesignWidthScale;
 
-    private float proportionalYChangeOnSelect = defaultProportionalYChangeOnSelect; // Proportional to height
-    private float proportionalXChangeOnSelect = defaultProportionalXChangeOnSelect; // Proportional to width
+    private float proportionalXChangeOnSelect = defaultProportionalXChangeOnSelect;
+    private float proportionalYChangeOnSelect = defaultProportionalYChangeOnSelect;
+
+    private float displayProportionalYOffset = 0; // Proportional to height
+    private float displayProportionalXOffset = 0; // Proportional to width
 
     private final Color faceBorderColor = new Color(defaultFaceBorderColor);
     private final Color backBorderColor = new Color(defaultBackBorderColor);
@@ -94,6 +94,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     private static FileHandle defaultSpriteFolder = Gdx.files.internal("playing_cards/");
     private static FileHandle spriteFolder = defaultSpriteFolder;
 
+    private static HashMap<Integer, Sprite> backSpriteCache = new HashMap<>();
+    private static HashMap<Integer, Sprite> faceSpriteCache = new HashMap<>();
     private static HashMap<Integer, Pixmap> faceDesignPixmaps = new HashMap<>();
     private static Pixmap backPixmap = null;
 
@@ -105,12 +107,15 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     // Card accessor:
     public final CardT card;
 
+    public RenderableCardMover mover;
+
     // Keeps track of all cards to allow the freeing up of any card's texture
     private static final List<RenderableCardEntity> allEntities = new ArrayList<>();
     private boolean isDisposed = false;
 
     public RenderableCardEntity(CardT card) {
         this.card = card;
+        mover = RenderableCardMover.scaledDistanceMover(this.card);
         baseRect.setPosition(0, 0);
         displayRect.setPosition(0, 0);
         reallocateResources(this);
@@ -123,11 +128,11 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     private void setDisplayX() {
-        displayRect.setX(baseRect.getX() + displayXOffset + (isSelected ? proportionalXChangeOnSelect * getDisplayWidth() : 0));
+        displayRect.setX(baseRect.getX() + displayXOffset + (displayProportionalXOffset * getDisplayWidth()));
     }
 
     private void setDisplayY() {
-        displayRect.setY(baseRect.getY() + displayYOffset + (isSelected ? proportionalYChangeOnSelect * getDisplayHeight() : 0));
+        displayRect.setY(baseRect.getY() + displayYOffset + (displayProportionalYOffset * getDisplayHeight()));
     }
 
     private void setDisplayPos() {
@@ -581,9 +586,13 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
             if(isSelected) {
                 setFaceBackgroundColor(defaultFaceSelectedBackgroundColor);
                 setBackBackgroundColor(defaultBackSelectedBackgroundColor);
+                mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnSelect);
+                mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnSelect);
             } else {
                 setBackBackgroundColor(defaultBackUnselectedBackgroundColor);
                 setFaceBackgroundColor(defaultFaceUnselectedBackgroundColor);
+                mover.setTargetDisplayProportionalXOffset(0);
+                mover.setTargetDisplayProportionalYOffset(0);
             }
             setDisplayPos();
             return (T)this;
@@ -595,9 +604,17 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
+    public T setDisplayProportionalYOffset(float displayProportionalYOffset) {
+        this.displayProportionalYOffset = displayProportionalYOffset;
+        setDisplayY();
+        return (T)this;
+    }
+
     public T setProportionalYChangeOnSelect(float proportionalYChangeOnSelect) {
         this.proportionalYChangeOnSelect = proportionalYChangeOnSelect;
-        setDisplayY();
+        if(isSelected) {
+            mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnSelect);
+        }
         return (T)this;
     }
 
@@ -610,9 +627,17 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return setProportionalYChangeOnSelect(defaultProportionalYChangeOnSelect);
     }
 
+    public T setDisplayProportionalXOffset(float displayProportionalXOffset) {
+        this.displayProportionalXOffset = displayProportionalXOffset;
+        setDisplayX();
+        return (T)this;
+    }
+
     public T setProportionalXChangeOnSelect(float proportionalXChangeOnSelect) {
         this.proportionalXChangeOnSelect = proportionalXChangeOnSelect;
-        setDisplayX();
+        if(isSelected) {
+            mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnSelect);
+        }
         return (T)this;
     }
 
@@ -722,12 +747,12 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return baseRect.getOriginYProportion();
     }
 
-    public float getProportionalYChangeOnSelect() {
-        return proportionalYChangeOnSelect;
+    public float getDisplayProportionalYOffset() {
+        return displayProportionalYOffset;
     }
 
-    public float getProportionalXChangeOnSelect() {
-        return proportionalXChangeOnSelect;
+    public float getDisplayProportionalXOffset() {
+        return displayProportionalXOffset;
     }
 
     // Display size/position:
@@ -967,26 +992,45 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         if(faceDesignPixmaps.get(card.getCardNum()) == null) {
             loadFaceDesignPixmapForCard(card.getCardNum());
         }
-        faceSprite = setupSpriteFromPixmap(
-                faceDesignPixmaps.get(card.getCardNum()), getFaceBackgroundColor(),
-                getFaceDesignWidthScale(), getFaceDesignHeightScale(),
-                getFaceBorderThicknessInPixels(), getFaceBorderColor());
+
+        int hashCode = hashCode();
+        Sprite cachedSprite = faceSpriteCache.get(hashCode);
+        if(cachedSprite != null) {
+            faceSprite = new Sprite(cachedSprite);
+        } else {
+            faceSprite = setupSpriteFromPixmap(
+                    faceDesignPixmaps.get(card.getCardNum()), getFaceBackgroundColor(),
+                    getFaceDesignWidthScale(), getFaceDesignHeightScale(),
+                    getFaceBorderThicknessInPixels(), cornerRadiusInPixels,
+                    getFaceBorderColor());
+            faceSpriteCache.put(hashCode, new Sprite(faceSprite));
+        }
     }
 
     private void setupThisCardBackSprite() {
         if(backPixmap == null) {
             loadBackPixmap();
         }
-        backSprite = setupSpriteFromPixmap(
-                backPixmap, getBackBackgroundColor(),
-                getBackDesignWidthScale(), getBackDesignHeightScale(),
-                getBackBorderThicknessInPixels(), getBackBorderColor());
+
+        int hashCode = hashCode();
+        Sprite cachedSprite = backSpriteCache.get(hashCode);
+        if(cachedSprite != null) {
+            backSprite = new Sprite(cachedSprite);
+        } else {
+            backSprite = setupSpriteFromPixmap(
+                    backPixmap, getBackBackgroundColor(),
+                    getBackDesignWidthScale(), getBackDesignHeightScale(),
+                    getBackBorderThicknessInPixels(), cornerRadiusInPixels,
+                    getBackBorderColor());
+            backSpriteCache.put(hashCode, new Sprite(backSprite));
+        }
     }
 
-    private Sprite setupSpriteFromPixmap(Pixmap designPixmap,
+    private static Sprite setupSpriteFromPixmap(Pixmap designPixmap,
                                          Color backgroundColor,
                                          float designWidthScale, float designHeightScale,
-                                         int borderThicknessInPixels, Color borderColor) {
+                                         int borderThicknessInPixels, int cornerRadiusInPixels,
+                                         Color borderColor) {
         Pixmap spritePixmap = new Pixmap(designPixmap.getWidth(), designPixmap.getHeight(), designPixmap.getFormat());
         spritePixmap.setColor(backgroundColor);
         spritePixmap.fill();
@@ -998,28 +1042,23 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                 (int)(0.5f * (CARD_HEIGHT_IN_PIXELS - (CARD_HEIGHT_IN_PIXELS * designHeightScale))),  // dsty
                 (int)(CARD_WIDTH_IN_PIXELS * designWidthScale),                                       // dstWidth
                 (int)(CARD_HEIGHT_IN_PIXELS * designHeightScale));                                    // dstHeight
-        roundPixmapCorners(spritePixmap, getCornerRadiusInPixels());
+        roundPixmapCorners(spritePixmap, cornerRadiusInPixels);
         drawCurvedBorderOnPixmap(spritePixmap,
-                getCornerRadiusInPixels(),
+                cornerRadiusInPixels,
                 borderThicknessInPixels,
                 borderColor);
 
         Sprite sprite = new Sprite(new Texture(spritePixmap));
         sprite.getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        sprite.setSize(getWidth(), getHeight());
         spritePixmap.dispose();
         return sprite;
     }
 
     protected final void invalidateSprites() {
-        if(faceSprite != null) {
-            faceSprite.getTexture().dispose();
-        }
+        // TODO: We don't dispose of textures because some other card might be relying on the same texture as this card.
+        //  Possible solution: check if any other non-disposed card has the same hashcode as this card and if not, texture is safe to dispose?
+        //  Remember to spriteCache.remove(hashCode()) for back and face sprites when disposing of textures.
         faceSprite = null;
-
-        if(backSprite != null) {
-            backSprite.getTexture().dispose();
-        }
         backSprite = null;
     }
 
@@ -1108,5 +1147,65 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         sprite.setOrigin(originXProportion * width, originYProportion * height);
         sprite.setRotation(rotation);
         sprite.draw(batch);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
+        RenderableCardEntity<?, ?> that = (RenderableCardEntity<?, ?>)o;
+        return cornerRadiusInPixels == that.cornerRadiusInPixels &&
+                faceBorderThicknessInPixels == that.faceBorderThicknessInPixels &&
+                backBorderThicknessInPixels == that.backBorderThicknessInPixels &&
+                Float.compare(that.faceDesignHeightScale, faceDesignHeightScale) == 0 &&
+                Float.compare(that.faceDesignWidthScale, faceDesignWidthScale) == 0 &&
+                Float.compare(that.backDesignHeightScale, backDesignHeightScale) == 0 &&
+                Float.compare(that.backDesignWidthScale, backDesignWidthScale) == 0 &&
+                Float.compare(that.proportionalXChangeOnSelect, proportionalXChangeOnSelect) == 0 &&
+                Float.compare(that.proportionalYChangeOnSelect, proportionalYChangeOnSelect) == 0 &&
+                Float.compare(that.displayProportionalYOffset, displayProportionalYOffset) == 0 &&
+                Float.compare(that.displayProportionalXOffset, displayProportionalXOffset) == 0 &&
+                Float.compare(that.displayXOffset, displayXOffset) == 0 &&
+                Float.compare(that.displayYOffset, displayYOffset) == 0 &&
+                Float.compare(that.displayProportion, displayProportion) == 0 &&
+                Float.compare(that.displayRotationOffset, displayRotationOffset) == 0 &&
+                selectable == that.selectable &&
+                flippable == that.flippable &&
+                faceUp == that.faceUp &&
+                isSelected == that.isSelected &&
+                isDisposed == that.isDisposed &&
+                defaultFaceBorderColor.equals(that.defaultFaceBorderColor) &&
+                defaultBackBorderColor.equals(that.defaultBackBorderColor) &&
+                defaultFaceUnselectedBackgroundColor.equals(that.defaultFaceUnselectedBackgroundColor) &&
+                defaultBackUnselectedBackgroundColor.equals(that.defaultBackUnselectedBackgroundColor) &&
+                defaultFaceSelectedBackgroundColor.equals(that.defaultFaceSelectedBackgroundColor) &&
+                defaultBackSelectedBackgroundColor.equals(that.defaultBackSelectedBackgroundColor) &&
+                defaultFaceHighlightedBackgroundColor.equals(that.defaultFaceHighlightedBackgroundColor) &&
+                defaultBackHighlightedBackgroundColor.equals(that.defaultBackHighlightedBackgroundColor) &&
+                faceBorderColor.equals(that.faceBorderColor) &&
+                backBorderColor.equals(that.backBorderColor) &&
+                faceBackgroundColor.equals(that.faceBackgroundColor) &&
+                backBackgroundColor.equals(that.backBackgroundColor) &&
+                baseRect.equals(that.baseRect) &&
+                displayRect.equals(that.displayRect) &&
+                Objects.equals(backSprite, that.backSprite) &&
+                Objects.equals(faceSprite, that.faceSprite) &&
+                card.equals(that.card) &&
+                Objects.equals(mover, that.mover);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(cornerRadiusInPixels,
+                faceBorderThicknessInPixels,
+                backBorderThicknessInPixels,
+                faceDesignHeightScale,
+                faceDesignWidthScale,
+                backDesignHeightScale,
+                backDesignWidthScale,
+                faceBorderColor,
+                backBorderColor,
+                faceBackgroundColor,
+                backBackgroundColor);
     }
 }
