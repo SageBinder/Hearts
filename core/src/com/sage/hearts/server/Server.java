@@ -1,5 +1,6 @@
 package com.sage.hearts.server;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net;
 import com.badlogic.gdx.net.NetJavaServerSocketImpl;
 import com.badlogic.gdx.net.ServerSocketHints;
@@ -50,6 +51,7 @@ public class Server extends Thread {
         Timer pingerTimer = new Timer();
         pingerTimer.scheduleAtFixedRate(pingerTask, PING_PERIOD, PING_PERIOD);
 
+        outerLoop:
         while(!closed) {
             // This inner loop breaks with gameState.lock still locked when the round is being started
             while(true) {
@@ -58,6 +60,8 @@ public class Server extends Thread {
                     if(gameState.players.size() == NUM_PLAYERS_TO_START) {
                         gameState.roundStarted = true;
                         break;
+                    } else if(closed){
+                        break outerLoop;
                     } else {
                         startRoundFlag = false;
                         host.sendPacket(new ServerPacket(ServerCode.COULD_NOT_START_GAME));
@@ -90,7 +94,11 @@ public class Server extends Thread {
             }
         }
 
-        serverSocket.dispose();
+        try {
+            serverSocket.dispose();
+        } catch(GdxRuntimeException e) {
+            Gdx.app.log("Server.run()", "Encountered GdxRuntimeException when trying to dispose of socket");
+        }
         pingerTimer.cancel();
     }
 
@@ -120,7 +128,9 @@ public class Server extends Thread {
         player.setInitialPacketHandlerForCode(ClientCode.START_GAME, packet -> {
             if(host == player && !startRoundFlag) {
                 startRoundFlag = true; // This simply requests the round runner thread to start; it does not force the round to start
-                startRoundObj.notify();
+                synchronized(startRoundObj) {
+                    startRoundObj.notify();
+                }
             } else {
                 player.sendPacket(new ServerPacket(ServerCode.COULD_NOT_START_GAME));
             }
@@ -130,10 +140,23 @@ public class Server extends Thread {
     }
 
     public void close() {
-        // We drop every player connection which should (?) make RoundRunner.playRound() throw a PlayerDisconnectedException.
-        // When the main server loop repeats, it will query the value of closed and will exit.
-        gameState.players.forEach(Player::dropConnection);
-        closed = true;
+        try {
+            // We drop every player connection which should (?) make RoundRunner.playRound() throw a PlayerDisconnectedException.
+            // When the main server loop repeats, it will query the value of closed and will exit.
+            gameState.players.forEach(Player::dropConnection);
+            closed = true;
+
+            // We need to notify startRoundObj in case the server is currently waiting for the round to start
+            synchronized(startRoundObj) {
+                startRoundObj.notify();
+            }
+        } finally {
+            try { // No matter what, serverSocket should be disposed
+                serverSocket.dispose();
+            } catch(GdxRuntimeException e) {
+                Gdx.app.log("Server.close()", "Encountered GdxRuntimeException when trying to dispose of socket");
+            }
+        }
     }
 
     Runnable connectionAcceptor = new Runnable() {
@@ -178,6 +201,7 @@ public class Server extends Thread {
                 newPlayer.setPlayerNum(gameState.players.size());
                 setInitialPacketHandlersForPlayer(newPlayer);
                 newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_ACCEPTED));
+                System.out.println("asd;lfkasd;f");
                 gameState.players.add(newPlayer);
                 sendPlayersToAllUntilNoDisconnections();
 

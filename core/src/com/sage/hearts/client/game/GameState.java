@@ -26,6 +26,7 @@ public class GameState {
 
     private Updater updater = new Updater();
     private final HeartsGame game;
+    public final Actions actions = new Actions();
 
     private final RenderableCardList<RenderableHeartsCard> lastWarheads = new RenderableCardList<>();
 
@@ -382,6 +383,10 @@ public class GameState {
     }
 
     public final class Actions {
+        private Actions() {
+
+        }
+
         public void sendWarheads(ClientConnection client) {
             // This if serves essentially the same purpose as the corresponding guard if in sendPlay()
             if(!lastWarheads.isEmpty()) {

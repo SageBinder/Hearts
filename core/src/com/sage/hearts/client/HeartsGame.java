@@ -15,8 +15,8 @@ public class HeartsGame extends Game {
     public static final Color BACKGROUND_COLOR = new Color(0, 0.2f, 0.11f, 1);
 
     private GameState gameState;
-    private ClientConnection clientConnection = null;
-    private Server server = null;
+    private ClientConnection clientConnection;
+    private Server server;
 
     private Screen startScreen,
             createGameScreen,
@@ -70,7 +70,9 @@ public class HeartsGame extends Game {
     }
 
     public void joinGame(String serverIP, int port, String name) {
+        System.out.println("join gmae");
         clientConnection = new ClientConnection(serverIP, port, name, this);
+        clientConnection.start();
     }
 
     public void startGameServer(int port) {
@@ -87,6 +89,12 @@ public class HeartsGame extends Game {
 
         this.server = new Server(port);
         server.start();
+    }
+
+    public void closeGameServer() {
+        if(server != null) {
+            server.close();
+        }
     }
 
     public ClientConnection getClientConnection() {

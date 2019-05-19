@@ -67,19 +67,19 @@ public class RenderablePlayer implements Renderable {
         play = null;
     }
 
-    boolean isHost() {
+    public boolean isHost() {
         return isHost;
     }
 
-    void setHost(boolean isHost) {
+    public void setHost(boolean isHost) {
         this.isHost = isHost;
     }
 
-    boolean isClientPlayer() {
+    public boolean isClientPlayer() {
         return isClientPlayer;
     }
 
-    void setIsClientPlayer(boolean isClientPlayer) {
+    public void setIsClientPlayer(boolean isClientPlayer) {
         this.isClientPlayer = isClientPlayer;
     }
 

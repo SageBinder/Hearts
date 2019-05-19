@@ -11,7 +11,6 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.client.HeartsGame;
-import com.sage.hearts.client.game.GameState;
 import com.sage.hearts.server.Server;
 
 import java.io.BufferedReader;
@@ -21,7 +20,6 @@ import java.net.URL;
 
 public class CreateGameScreen implements Screen, InputProcessor {
     private HeartsGame game;
-    private GameState gameState;
 
     private Viewport viewport;
     private float viewportScale = 5f;
@@ -43,7 +41,6 @@ public class CreateGameScreen implements Screen, InputProcessor {
 
     public CreateGameScreen(HeartsGame game) {
         this.game = game;
-        this.gameState = game.getGameState();
 
         viewportSetup();
         fontSetup();
@@ -105,7 +102,7 @@ public class CreateGameScreen implements Screen, InputProcessor {
                                         new URL("https://api.ipify.org").openStream())).readLine();
                 ipLabel.setText("Your IP: [CYAN]" + thisMachineIP);
             } catch(IOException e) {
-                ipLabel.setText("[YELLOW]Error: could net determine your IP");
+                ipLabel.setText("[YELLOW]Error: could not determine your IP");
             }
         }).start();
 
@@ -148,9 +145,16 @@ public class CreateGameScreen implements Screen, InputProcessor {
                 } else if(port == 1023) { // 1023 is a reserved port
                     errorLabel.setText("Error: Port 1023 is a reserved port");
                 }
+
                 game.startGameServer(port);
-                game.joinGame("127.0.0.1", port, name);
-                game.showGameScreen();
+                try {
+                    game.joinGame("127.0.0.1", port, name);
+                } catch(Exception e) {
+                    errorLabel.setText("Error: Opened server but could not connect to 127.0.0.1:" + port + ". Closing server.");
+                    game.closeGameServer();
+                    return;
+                }
+                game.showLobbyScreen();
             }
         });
 

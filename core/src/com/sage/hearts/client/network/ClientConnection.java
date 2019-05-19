@@ -16,8 +16,8 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ClientConnection extends Thread {
-    final int port;
-    final String serverIP;
+    public final int port;
+    public final String serverIP;
     private final HeartsGame game;
     private final String playerName;
 
@@ -49,8 +49,11 @@ public class ClientConnection extends Thread {
         while(!quit) {
             ServerPacket packet;
             try {
+                System.out.println("loop start");
                 int packetSize = input.readInt();
                 packet = ServerPacket.fromBytes(input.readNBytes(packetSize));
+                System.out.println("read packet");
+
             } catch(IOException e) {
                 quit();
                 packetQueue.add(new LostConnectionToServerQueueItem());
