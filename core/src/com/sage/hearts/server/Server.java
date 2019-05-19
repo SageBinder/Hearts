@@ -201,7 +201,6 @@ public class Server extends Thread {
                 newPlayer.setPlayerNum(gameState.players.size());
                 setInitialPacketHandlersForPlayer(newPlayer);
                 newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_ACCEPTED));
-                System.out.println("asd;lfkasd;f");
                 gameState.players.add(newPlayer);
                 sendPlayersToAllUntilNoDisconnections();
 
@@ -210,7 +209,7 @@ public class Server extends Thread {
         }
     };
 
-    TimerTask pingerTask = new TimerTask() {
+    private TimerTask pingerTask = new TimerTask() {
         @Override
         public void run() {
             // We don't need a timeout on this lock because it doesn't need to run while the round is running.

@@ -194,6 +194,11 @@ public class GameState {
                 players[i].setIsClientPlayer(playerNum == clientPlayerNum);
                 players[i].setAccumulatedPoints(accumulatedPointsMap.getOrDefault(playerNum, 0));
             }
+            thisPlayer = getPlayerByPlayerNum(clientPlayerNum).orElseThrow(() -> new InvalidServerPacketException(
+                    "waitForPlayers() - No player found with player num "
+                            + clientPlayerNum
+                            + " sent by server for client player"
+            ));
         }
 
         // --- TRICK CODES ---

@@ -5,11 +5,17 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.utils.Timer.Task;
 import com.dosse.upnp.UPnP;
 import com.sage.hearts.client.game.GameState;
+import com.sage.hearts.client.network.ClientCode;
 import com.sage.hearts.client.network.ClientConnection;
+import com.sage.hearts.client.network.ClientPacket;
 import com.sage.hearts.client.screens.*;
 import com.sage.hearts.server.Server;
+
+import java.io.IOException;
 
 public class HeartsGame extends Game {
     public static final Color BACKGROUND_COLOR = new Color(0, 0.2f, 0.11f, 1);
@@ -28,7 +34,21 @@ public class HeartsGame extends Game {
 
     @Override
     public void create() {
-        Gdx.graphics.setTitle("❤︎❤︎❤︎");
+        Gdx.graphics.setTitle("❤️❤️❤️");
+        Timer titleTimer = new Timer();
+        titleTimer.scheduleTask(new Task() {
+            private int count = 0;
+            private final int numHeartsInTitle = 3;
+            @Override
+            public void run() {
+                count = (count + 1) % numHeartsInTitle;
+                StringBuilder title = new StringBuilder();
+                for(int i = 0; i < numHeartsInTitle; i++) {
+                    title.append(i == count ? "\uD83D\uDC94" : "❤️");
+                }
+                Gdx.graphics.setTitle(title.toString());
+            }
+        }, 0.5f, 0.5f);
 
         gameState = new GameState(this);
         startScreen = new StartScreen(this);
@@ -38,7 +58,9 @@ public class HeartsGame extends Game {
         lobbyScreen = new LobbyScreen(this);
         gameScreen = new GameScreen(this);
         playgroundScreen = new PlaygroundScreen(this);
+        System.out.println("before setScreen");
         setScreen(startScreen);
+        System.out.println("ok bye");
     }
 
     public void showStartScreen() {
@@ -73,6 +95,13 @@ public class HeartsGame extends Game {
         System.out.println("join gmae");
         clientConnection = new ClientConnection(serverIP, port, name, this);
         clientConnection.start();
+        ClientPacket namePacket = new ClientPacket(ClientCode.NAME);
+        namePacket.data.put("name", name);
+        try {
+            clientConnection.sendPacket(namePacket);
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void startGameServer(int port) {

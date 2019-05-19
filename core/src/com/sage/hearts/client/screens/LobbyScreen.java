@@ -151,12 +151,11 @@ public class LobbyScreen implements Screen, InputProcessor {
         playersListTable = new Table();
         playersListTable.align(Align.center);
 
-        startGameButton = new TextButton("", startGameButtonStyle);
+        startGameButton = new TextButton("Start Game", startGameButtonStyle);
         startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 try {
-                    System.out.println(client == null);
                     client.sendPacket(new ClientPacket(ClientCode.START_GAME));
                 } catch(IOException e) {
                     messageLabel.setText("Error connecting to server. Maybe you lost connection?");
@@ -224,8 +223,6 @@ public class LobbyScreen implements Screen, InputProcessor {
         HeartsGame.clearScreen();
 
         if(gameState.update(client)) {
-            System.out.println("update");
-            System.out.println(gameState.players);
             updateUIFromGameState();
         }
 
