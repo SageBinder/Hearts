@@ -58,11 +58,13 @@ public class RenderablePlayer implements Renderable {
         this.play = play;
     }
 
-    public void disposePlay() {
-        if(this.play != null) {
-            this.play.dispose();
-        }
+    public void clearPlay() {
         this.play = null;
+    }
+
+    public void clearCards() {
+        collectedPointCards.clear();
+        play = null;
     }
 
     boolean isHost() {
@@ -79,13 +81,6 @@ public class RenderablePlayer implements Renderable {
 
     void setIsClientPlayer(boolean isClientPlayer) {
         this.isClientPlayer = isClientPlayer;
-    }
-
-    public void disposeCards() {
-        collectedPointCards.disposeAll();
-        collectedPointCards.clear();
-        play.dispose();
-        play = null;
     }
 
     @Override

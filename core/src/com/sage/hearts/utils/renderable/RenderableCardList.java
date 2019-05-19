@@ -19,6 +19,10 @@ public class RenderableCardList<T extends Card & RenderableCard> extends CardLis
         super(other);
     }
 
+    public void update(float delta) {
+        forEach(c -> c.update(delta));
+    }
+
     public void render(SpriteBatch batch, Viewport viewport) {
         render(batch, viewport, false);
     }

@@ -101,6 +101,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
 
     private Sprite backSprite = null;
     private Sprite faceSprite = null;
+    private int spriteParametersHash;
 
     private static String imageExtension = ".png";
 
@@ -115,6 +116,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
 
     public RenderableCardEntity(CardT card) {
         this.card = card;
+        spriteParametersHash = spriteParametersHash();
         mover = RenderableCardMover.scaledDistanceMover(this.card);
         baseRect.setPosition(0, 0);
         displayRect.setPosition(0, 0);
@@ -735,7 +737,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return baseRect.getHeight();
     }
 
-    public float getRotation() {
+    public float getRotationRad() {
         return baseRect.getRotation();
     }
 
@@ -793,7 +795,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return displayProportion;
     }
 
-    public float getDisplayRotationOffset() {
+    public float getDisplayRotationOffsetRad() {
         return displayRotationOffset;
     }
 
@@ -828,6 +830,12 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return entityIsDisposed(this);
     }
 
+    protected final void invalidateSprites() {
+        backSprite = null;
+        faceSprite = null;
+        spriteParametersHash = spriteParametersHash();
+    }
+
     public static void setSpriteFolder(FileHandle newSpriteFolder) {
         spriteFolder = newSpriteFolder;
         resetPixmaps();
@@ -843,9 +851,21 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     public static void disposeEntity(RenderableCardEntity entity) {
-        entity.invalidateSprites();
         allEntities.remove(entity);
         entity.isDisposed = true;
+
+        // Only dispose of the texture if no other card exists which uses the same texture
+        if(allEntities.stream().noneMatch(c -> c.spriteParametersHash == entity.spriteParametersHash)) {
+            if(entity.faceSprite != null) {
+                entity.faceSprite.getTexture().dispose();
+            }
+            if(entity.backSprite != null) {
+                entity.backSprite.getTexture().dispose();
+            }
+            faceSpriteCache.remove(entity.spriteParametersHash);
+            backSpriteCache.remove(entity.spriteParametersHash);
+        }
+        entity.invalidateSprites();
     }
 
     public static void disposeAllEntities() {
@@ -993,17 +1013,16 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
             loadFaceDesignPixmapForCard(card.getCardNum());
         }
 
-        int hashCode = hashCode();
-        Sprite cachedSprite = faceSpriteCache.get(hashCode);
+        Sprite cachedSprite = faceSpriteCache.get(spriteParametersHash);
         if(cachedSprite != null) {
             faceSprite = new Sprite(cachedSprite);
         } else {
             faceSprite = setupSpriteFromPixmap(
                     faceDesignPixmaps.get(card.getCardNum()), getFaceBackgroundColor(),
                     getFaceDesignWidthScale(), getFaceDesignHeightScale(),
-                    getFaceBorderThicknessInPixels(), cornerRadiusInPixels,
+                    getFaceBorderThicknessInPixels(), getCornerRadiusInPixels(),
                     getFaceBorderColor());
-            faceSpriteCache.put(hashCode, new Sprite(faceSprite));
+            faceSpriteCache.put(spriteParametersHash, new Sprite(faceSprite));
         }
     }
 
@@ -1012,17 +1031,16 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
             loadBackPixmap();
         }
 
-        int hashCode = hashCode();
-        Sprite cachedSprite = backSpriteCache.get(hashCode);
+        Sprite cachedSprite = backSpriteCache.get(spriteParametersHash);
         if(cachedSprite != null) {
             backSprite = new Sprite(cachedSprite);
         } else {
             backSprite = setupSpriteFromPixmap(
                     backPixmap, getBackBackgroundColor(),
                     getBackDesignWidthScale(), getBackDesignHeightScale(),
-                    getBackBorderThicknessInPixels(), cornerRadiusInPixels,
+                    getBackBorderThicknessInPixels(), getCornerRadiusInPixels(),
                     getBackBorderColor());
-            backSpriteCache.put(hashCode, new Sprite(backSprite));
+            backSpriteCache.put(spriteParametersHash, new Sprite(backSprite));
         }
     }
 
@@ -1054,14 +1072,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return sprite;
     }
 
-    protected final void invalidateSprites() {
-        // TODO: We don't dispose of textures because some other card might be relying on the same texture as this card.
-        //  Possible solution: check if any other non-disposed card has the same hashcode as this card and if not, texture is safe to dispose?
-        //  Remember to spriteCache.remove(hashCode()) for back and face sprites when disposing of textures.
-        faceSprite = null;
-        backSprite = null;
-    }
-
     public final void cardChanged() {
         cardChangedImpl();
         invalidateSprites();
@@ -1080,7 +1090,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     public void renderBase(SpriteBatch batch, Viewport viewport) {
         renderAt(batch, viewport,
                 getX(), getY(), getWidth(), getHeight(),
-                getOriginXProportion(), getOriginYProportion(), getRotation());
+                getOriginXProportion(), getOriginYProportion(), getRotationRad());
     }
 
     public void renderAt(SpriteBatch batch, Viewport viewport,
@@ -1149,6 +1159,21 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         sprite.draw(batch);
     }
 
+    public int spriteParametersHash() {
+        return Objects.hash(cornerRadiusInPixels,
+                faceBorderThicknessInPixels,
+                backBorderThicknessInPixels,
+                faceDesignHeightScale,
+                faceDesignWidthScale,
+                backDesignHeightScale,
+                backDesignWidthScale,
+                faceBorderColor,
+                backBorderColor,
+                faceBackgroundColor,
+                backBackgroundColor,
+                card.getCardNum());
+    }
+
     @Override
     public boolean equals(Object o) {
         if(this == o) return true;
@@ -1196,16 +1221,52 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
 
     @Override
     public int hashCode() {
-        return Objects.hash(cornerRadiusInPixels,
+        return Objects.hash(defaultCornerRadiusInPixels,
+                defaultFaceBorderThicknessInPixels,
+                defaultBackBorderThicknessInPixels,
+                defaultFaceDesignHeightScale,
+                defaultFaceDesignWidthScale,
+                defaultBackDesignHeightScale,
+                defaultBackDesignWidthScale,
+                defaultProportionalYChangeOnSelect,
+                defaultProportionalXChangeOnSelect,
+                defaultFaceBorderColor,
+                defaultBackBorderColor,
+                defaultFaceUnselectedBackgroundColor,
+                defaultBackUnselectedBackgroundColor,
+                defaultFaceSelectedBackgroundColor,
+                defaultBackSelectedBackgroundColor,
+                defaultFaceHighlightedBackgroundColor,
+                defaultBackHighlightedBackgroundColor,
+                cornerRadiusInPixels,
                 faceBorderThicknessInPixels,
                 backBorderThicknessInPixels,
                 faceDesignHeightScale,
                 faceDesignWidthScale,
                 backDesignHeightScale,
                 backDesignWidthScale,
+                proportionalXChangeOnSelect,
+                proportionalYChangeOnSelect,
+                displayProportionalYOffset,
+                displayProportionalXOffset,
                 faceBorderColor,
                 backBorderColor,
                 faceBackgroundColor,
-                backBackgroundColor);
+                backBackgroundColor,
+                baseRect,
+                displayRect,
+                displayXOffset,
+                displayYOffset,
+                displayProportion,
+                displayRotationOffset,
+                selectable,
+                flippable,
+                faceUp,
+                isSelected,
+                backSprite,
+                faceSprite,
+                card,
+                mover,
+                isDisposed);
     }
 }

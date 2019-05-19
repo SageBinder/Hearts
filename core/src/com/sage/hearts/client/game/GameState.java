@@ -181,7 +181,7 @@ public class GameState {
 
             for(int i = 0; i < GameState.this.players.length; i++) {
                 if(players[i] != null) {
-                    players[i].disposeCards();
+                    players[i].clearCards();
                     players[i] = null;
                 }
             }
@@ -198,11 +198,11 @@ public class GameState {
 
         // --- TRICK CODES ---
         private void trickStart() {
-            Arrays.stream(players).forEach(RenderablePlayer::disposePlay);
+            Arrays.stream(players).forEach(RenderablePlayer::clearPlay);
         }
 
         private void playTwoOfClubs() {
-            thisPlayer.disposePlay();
+            thisPlayer.clearPlay();
             thisPlayer.setPlay(thisPlayerHand.getAndRemove(Rank.TWO, Suit.CLUBS)
                     .orElse(new RenderableHeartsCard(Rank.TWO, Suit.CLUBS)));
             message = "You had the two of clubs";
@@ -251,7 +251,7 @@ public class GameState {
                 throw new InvalidServerPacketException("waitForNewPlay() - server sent invalid card num " + data.get("play"));
             }
 
-            newPlayPlayer.disposePlay(); // newPlayPlayer.play should already be null but dispose just in case
+            newPlayPlayer.clearPlay(); // newPlayPlayer.play should already be null but clear just in case
             newPlayPlayer.setPlay(newPlay);
         }
 
@@ -292,7 +292,7 @@ public class GameState {
 
         // --- ROUND CODES ---
         private void roundStart() {
-            Arrays.stream(players).filter(Objects::nonNull).forEach(RenderablePlayer::disposeCards);
+            Arrays.stream(players).filter(Objects::nonNull).forEach(RenderablePlayer::clearCards);
             turnPlayer = null;
             leadingPlayer = null;
             heartsBroke = false;
@@ -325,7 +325,6 @@ public class GameState {
             } catch(InvalidCardException e) {
                 throw new InvalidServerPacketException("waitForHand() - Server sent an invalid card num for a card in hand");
             }
-            thisPlayerHand.disposeAll();
             thisPlayerHand.clear();
             thisPlayerHand.addAll(newHand);
         }

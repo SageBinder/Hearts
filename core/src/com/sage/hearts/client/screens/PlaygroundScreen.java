@@ -40,8 +40,6 @@ public class PlaygroundScreen implements Screen, InputProcessor {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(this);
-
-        // resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()); is automatically called after show();
     }
 
     @Override
@@ -50,8 +48,7 @@ public class PlaygroundScreen implements Screen, InputProcessor {
 
         test.entity().rotateDeg(delta * 360 / 10);
         test.update(delta);
-        cards.forEach(c -> c.update(delta));
-//        cards.rotation += (delta);
+        cards.update(delta);
 
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
