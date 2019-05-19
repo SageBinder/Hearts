@@ -12,7 +12,6 @@ import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 import com.sage.hearts.utils.hearts.HeartsCard;
-import com.sage.hearts.utils.renderable.RenderableCard;
 import com.sage.hearts.utils.renderable.RenderableCardList;
 import com.sage.hearts.utils.renderable.RenderableHand;
 
@@ -264,7 +263,7 @@ public class GameState {
                     ));
             Arrays.stream(players).forEach(p ->
                     p.getPlay().ifPresent(c ->
-                            c.entity.setFaceBackgroundColor(c.entity.defaultFaceUnselectedBackgroundColor)));
+                            c.entity.setFaceBackgroundColor(c.entity.defaultFaceBackgroundColor)));
             leadingPlayer.getPlay().ifPresent(c -> c.entity.setFaceBackgroundColor(winningPlayColor));
         }
 
@@ -391,7 +390,7 @@ public class GameState {
             }
 
             RenderableCardList<RenderableHeartsCard> selectedCards = thisPlayerHand.stream()
-                    .filter(RenderableCard::isSelected)
+                    .filter(RenderableHeartsCard::isSelected)
                     .collect(Collectors.toCollection(RenderableCardList::new));
             if(selectedCards.size() == 3) {
                 ClientPacket packet = new ClientPacket();
@@ -424,7 +423,7 @@ public class GameState {
             }
 
             RenderableCardList<RenderableHeartsCard> selectedCards = thisPlayerHand.stream()
-                    .filter(RenderableCard::isSelected)
+                    .filter(RenderableHeartsCard::isSelected)
                     .collect(Collectors.toCollection(RenderableCardList::new));
             if(selectedCards.size() == 1) {
                 RenderableHeartsCard card = selectedCards.get(0);

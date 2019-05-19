@@ -52,17 +52,17 @@ public class RenderableCardGroup<T extends Card & RenderableCard> extends Render
             float rotCos = MathUtils.cos(rotation);
             float rotSin = MathUtils.sin(rotation);
             float relativeX = i * division + offset;
-            float defaultXChangeOnSelect = e.defaultProportionalXChangeOnSelect * e.getWidth();
-            float defaultYChangeOnSelect = e.defaultProportionalYChangeOnSelect * e.getHeight();
-            float proportionalXChangeOnSelect = (rotCos * defaultXChangeOnSelect) - (rotSin * defaultYChangeOnSelect);
-            float proportionalYChangeOnSelect = (rotSin * defaultXChangeOnSelect) + (rotCos * defaultYChangeOnSelect);
+            float displayProportionalXOffset = e.getDisplayProportionalXOffset();
+            float displayProportionalYOffset = e.getDisplayProportionalYOffset();
+            float transformedDisplayProportionalXOffset = (rotCos * displayProportionalXOffset) - (rotSin * displayProportionalYOffset);
+            float transformedDisplayProportionalYOffset = (rotSin * displayProportionalXOffset) + (rotCos * displayProportionalYOffset);
             e.setOriginProportion(0, 0)
                     .setRotationRad(rotation)
                     .setHeight(cardHeight)
                     .setX(pos.x + (relativeX * rotCos))
                     .setY(pos.y + (relativeX * rotSin))
-                    .setAbsoluteXChangeOnSelect(proportionalXChangeOnSelect)
-                    .setAbsoluteYChangeOnSelect(proportionalYChangeOnSelect);
+                    .setDisplayProportionalXOffset(transformedDisplayProportionalXOffset)
+                    .setDisplayProportionalYOffset(transformedDisplayProportionalYOffset);
         }
 
         if(inDebugMode) {

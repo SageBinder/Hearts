@@ -1,9 +1,6 @@
 package com.sage.hearts.client.screens;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -153,6 +150,7 @@ public class CreateGameScreen implements Screen, InputProcessor {
                 }
                 game.startGameServer(port);
                 game.joinGame("127.0.0.1", port, name);
+                game.showGameScreen();
             }
         });
 
@@ -230,6 +228,9 @@ public class CreateGameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
+        if(keycode == Input.Keys.ESCAPE) {
+            game.showStartScreen();
+        }
         return false;
     }
 

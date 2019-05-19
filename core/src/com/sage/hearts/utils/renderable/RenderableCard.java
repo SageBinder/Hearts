@@ -33,23 +33,6 @@ public interface RenderableCard<T extends RenderableCardEntity<? extends T, ? ex
         return entity();
     }
 
-    // Select setters:
-    default T setSelectable(boolean selectable) {
-        return entity().setSelectable(selectable);
-    }
-
-    default T setSelected(boolean selected) {
-        return entity().setSelected(selected);
-    }
-
-    default T select() {
-        return entity().select();
-    }
-
-    default T deselect() {
-        return entity().deselect();
-    }
-
     // Position setters:
     default T setPosition(Vector2 pos) {
         return entity().setPosition(pos);
@@ -65,15 +48,6 @@ public interface RenderableCard<T extends RenderableCardEntity<? extends T, ? ex
 
     default T setY(float y) {
         return entity().setY(y);
-    }
-
-    // Select getters:
-    default boolean isSelectable() {
-        return entity().isSelectable();
-    }
-
-    default boolean isSelected() {
-        return entity().isSelected();
     }
 
     // Position/size getters:

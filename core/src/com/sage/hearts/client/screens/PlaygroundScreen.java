@@ -33,8 +33,6 @@ public class PlaygroundScreen implements Screen, InputProcessor {
         viewport = new ExtendViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch = new SpriteBatch();
         test.entity().setOriginToCenter().setSelectable(true);
-
-        show();
     }
 
     @Override
@@ -93,6 +91,11 @@ public class PlaygroundScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
+        if(keycode == Input.Keys.ESCAPE) {
+            cards.disposeAll();
+            cards.clear();
+            game.showStartScreen();
+        }
         return false;
     }
 
@@ -186,9 +189,9 @@ public class PlaygroundScreen implements Screen, InputProcessor {
         var worldPos = viewport.unproject(new Vector2(screenX, screenY));
         cards.forEach(c -> c.entity.deselect());
         for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
-            RenderableCardEntity c = i.previous().entity();
-            if(c.displayRectContainsPoint(worldPos) || c.baseRectContainsPoint(worldPos)) {
-                c.setSelected(true);
+            var entity = i.previous().entity();
+            if(entity.displayRectContainsPoint(worldPos) || entity.baseRectContainsPoint(worldPos)) {
+                entity.setSelected(true);
                 break;
             }
         }

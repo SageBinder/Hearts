@@ -38,7 +38,7 @@ public class HeartsGame extends Game {
         lobbyScreen = new LobbyScreen(this);
         gameScreen = new GameScreen(this);
         playgroundScreen = new PlaygroundScreen(this);
-        setScreen(playgroundScreen);
+        setScreen(startScreen);
     }
 
     public void showStartScreen() {
@@ -65,7 +65,7 @@ public class HeartsGame extends Game {
         setScreen(gameScreen);
     }
 
-    public void showPlaygroundScren() {
+    public void showPlaygroundScreen() {
         setScreen(playgroundScreen);
     }
 

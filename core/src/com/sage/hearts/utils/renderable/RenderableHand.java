@@ -40,25 +40,4 @@ public class RenderableHand<T extends Card & RenderableCard> extends RenderableC
 
         super.render(batch, viewport, renderBase);
     }
-
-    public boolean add(T c) {
-        c.entity().setSelectable(true);
-        c.entity().setFlippable(true);
-        return super.add(c);
-    }
-
-    public void add(int index, T c) {
-        c.entity().setSelectable(true);
-        c.entity().setFlippable(true);
-        super.add(c);
-    }
-
-    @Override
-    public boolean addAll(int index, Collection<? extends T> c) {
-        c.forEach(card -> {
-            card.entity().setSelectable(true);
-            card.entity().setFlippable(true);
-        });
-        return super.addAll(index, c);
-    }
 }

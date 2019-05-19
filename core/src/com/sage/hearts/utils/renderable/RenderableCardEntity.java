@@ -37,20 +37,14 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     public final float defaultBackDesignHeightScale = ((float)CARD_HEIGHT_IN_PIXELS - (2 * (float)defaultBackBorderThicknessInPixels)) / (float)CARD_HEIGHT_IN_PIXELS;
     public final float defaultBackDesignWidthScale = ((float)CARD_WIDTH_IN_PIXELS - (2 * (float)defaultBackBorderThicknessInPixels)) / (float)CARD_WIDTH_IN_PIXELS;
 
-    public final float defaultProportionalYChangeOnSelect = 0.9f; // Proportional to height
-    public final float defaultProportionalXChangeOnSelect = 0.05f; // Proportional to width
-
     public final Color defaultFaceBorderColor = new Color(0, 0, 0, 1);
     public final Color defaultBackBorderColor = new Color(1, 1, 1, 1);
 
-    public final Color defaultFaceUnselectedBackgroundColor = new Color(1, 1, 1, 1);
-    public final Color defaultBackUnselectedBackgroundColor = new Color(0, 0, 0, 1);
-
-    public final Color defaultFaceSelectedBackgroundColor = new Color(defaultFaceUnselectedBackgroundColor).sub(0.5f, 0.5f, 0.5f, 0);
-    public final Color defaultBackSelectedBackgroundColor = new Color(defaultBackUnselectedBackgroundColor);
+    public final Color defaultFaceBackgroundColor = new Color(1, 1, 1, 1);
+    public final Color defaultBackBackgroundColor = new Color(0, 0, 0, 1);
 
     public final Color defaultFaceHighlightedBackgroundColor = new Color(1.0f, 1.0f, 0.5f, 1.0f);
-    public final Color defaultBackHighlightedBackgroundColor = new Color(defaultBackUnselectedBackgroundColor);
+    public final Color defaultBackHighlightedBackgroundColor = new Color(defaultBackBackgroundColor);
 
     // Member variables:
     private int cornerRadiusInPixels = defaultCornerRadiusInPixels;
@@ -64,17 +58,14 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     private float backDesignHeightScale = defaultBackDesignHeightScale;
     private float backDesignWidthScale = defaultBackDesignWidthScale;
 
-    private float proportionalXChangeOnSelect = defaultProportionalXChangeOnSelect;
-    private float proportionalYChangeOnSelect = defaultProportionalYChangeOnSelect;
-
     private float displayProportionalYOffset = 0; // Proportional to height
     private float displayProportionalXOffset = 0; // Proportional to width
 
     private final Color faceBorderColor = new Color(defaultFaceBorderColor);
     private final Color backBorderColor = new Color(defaultBackBorderColor);
 
-    private final Color faceBackgroundColor = new Color(defaultFaceUnselectedBackgroundColor);
-    private final Color backBackgroundColor = new Color(defaultBackUnselectedBackgroundColor);
+    private final Color faceBackgroundColor = new Color(defaultFaceBackgroundColor);
+    private final Color backBackgroundColor = new Color(defaultBackBackgroundColor);
 
     // baseRect represents overall rectangle before rounding corners
     private final CardPolygon baseRect = new CardPolygon(CARD_WIDTH_IN_PIXELS, CARD_HEIGHT_IN_PIXELS);
@@ -85,10 +76,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     private float displayProportion = 1f;
     private float displayRotationOffset = 0;
 
-    private boolean selectable = true;
     private boolean flippable = true;
     private boolean faceUp = true;
-    private boolean isSelected = false;
 
     // Render variables:
     private static FileHandle defaultSpriteFolder = Gdx.files.internal("playing_cards/");
@@ -145,7 +134,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     private void setDisplaySize() {
         displayRect.setWidth(baseRect.getWidth() * displayProportion);
         displayRect.setHeight(baseRect.getHeight() * displayProportion);
-        setDisplayPos(); // Must call this because displayPos depends on display size (for isSelected height change)
+        setDisplayPos(); // Must call this because displayPos depends on display size (for display proportional offset)
     }
 
     private void setDisplayRotation() {
@@ -218,11 +207,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     public T resetFaceBackgroundColor() {
-        if(isSelected) {
-            setFaceBackgroundColor(defaultFaceSelectedBackgroundColor);
-        } else {
-            setFaceBackgroundColor(defaultFaceUnselectedBackgroundColor);
-        }
+        setFaceBackgroundColor(defaultFaceBackgroundColor);
         return (T)this;
     }
 
@@ -305,7 +290,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     public T resetBackBackgroundColor() {
-        setBackBackgroundColor(isSelected ? defaultBackSelectedBackgroundColor : defaultBackUnselectedBackgroundColor);
+        setBackBackgroundColor(defaultBackBackgroundColor);
         return (T)this;
     }
 
@@ -348,13 +333,10 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         resetCornerRadius();
         resetBothBorderThicknesses();
         resetBothDesignScales();
-        resetYChangeOnSelect();
-        resetXChangeOnSelect();
         resetBothBorderColors();
         resetBothBackgroundColors();
 
         invalidateSprites();
-
         return (T)this;
     }
 
@@ -565,68 +547,10 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-    // Selectable/Flippable
-    public T select() {
-        setSelected(true);
-        return (T)this;
-    }
-
-    public T deselect() {
-        setSelected(false);
-        return (T)this;
-    }
-
-    public T toggleSelected() {
-        return setSelected(!isSelected);
-    }
-
-    public T setSelected(boolean selected) {
-        if(isSelected == selected || !selectable) {
-            return (T)this;
-        } else {
-            isSelected = selected;
-            if(isSelected) {
-                setFaceBackgroundColor(defaultFaceSelectedBackgroundColor);
-                setBackBackgroundColor(defaultBackSelectedBackgroundColor);
-                mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnSelect);
-                mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnSelect);
-            } else {
-                setBackBackgroundColor(defaultBackUnselectedBackgroundColor);
-                setFaceBackgroundColor(defaultFaceUnselectedBackgroundColor);
-                mover.setTargetDisplayProportionalXOffset(0);
-                mover.setTargetDisplayProportionalYOffset(0);
-            }
-            setDisplayPos();
-            return (T)this;
-        }
-    }
-
-    public T setSelectable(boolean selectable) {
-        this.selectable = selectable;
-        return (T)this;
-    }
-
     public T setDisplayProportionalYOffset(float displayProportionalYOffset) {
         this.displayProportionalYOffset = displayProportionalYOffset;
         setDisplayY();
         return (T)this;
-    }
-
-    public T setProportionalYChangeOnSelect(float proportionalYChangeOnSelect) {
-        this.proportionalYChangeOnSelect = proportionalYChangeOnSelect;
-        if(isSelected) {
-            mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnSelect);
-        }
-        return (T)this;
-    }
-
-    public T setAbsoluteYChangeOnSelect(float absoluteYChangeOnSelect) {
-        setProportionalYChangeOnSelect(absoluteYChangeOnSelect / getHeight());
-        return (T)this;
-    }
-
-    public T resetYChangeOnSelect() {
-        return setProportionalYChangeOnSelect(defaultProportionalYChangeOnSelect);
     }
 
     public T setDisplayProportionalXOffset(float displayProportionalXOffset) {
@@ -635,23 +559,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return (T)this;
     }
 
-    public T setProportionalXChangeOnSelect(float proportionalXChangeOnSelect) {
-        this.proportionalXChangeOnSelect = proportionalXChangeOnSelect;
-        if(isSelected) {
-            mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnSelect);
-        }
-        return (T)this;
-    }
-
-    public T setAbsoluteXChangeOnSelect(float absoluteXChangeOnSelect) {
-        setProportionalXChangeOnSelect(absoluteXChangeOnSelect / getWidth());
-        return (T)this;
-    }
-
-    public T resetXChangeOnSelect() {
-        return setProportionalXChangeOnSelect(defaultProportionalXChangeOnSelect);
-    }
-
+    // Flippable:
     public T setFaceUp(boolean faceUp) {
         if(flippable) this.faceUp = faceUp;
         return (T)this;
@@ -799,15 +707,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
         return displayRotationOffset;
     }
 
-    // Selectable/flippable:
-    public boolean isSelected() {
-        return isSelected;
-    }
-
-    public boolean isSelectable() {
-        return selectable;
-    }
-
+    // Flippable:
     public boolean isFaceUp() {
         return faceUp;
     }
@@ -1186,25 +1086,19 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                 Float.compare(that.faceDesignWidthScale, faceDesignWidthScale) == 0 &&
                 Float.compare(that.backDesignHeightScale, backDesignHeightScale) == 0 &&
                 Float.compare(that.backDesignWidthScale, backDesignWidthScale) == 0 &&
-                Float.compare(that.proportionalXChangeOnSelect, proportionalXChangeOnSelect) == 0 &&
-                Float.compare(that.proportionalYChangeOnSelect, proportionalYChangeOnSelect) == 0 &&
                 Float.compare(that.displayProportionalYOffset, displayProportionalYOffset) == 0 &&
                 Float.compare(that.displayProportionalXOffset, displayProportionalXOffset) == 0 &&
                 Float.compare(that.displayXOffset, displayXOffset) == 0 &&
                 Float.compare(that.displayYOffset, displayYOffset) == 0 &&
                 Float.compare(that.displayProportion, displayProportion) == 0 &&
                 Float.compare(that.displayRotationOffset, displayRotationOffset) == 0 &&
-                selectable == that.selectable &&
                 flippable == that.flippable &&
                 faceUp == that.faceUp &&
-                isSelected == that.isSelected &&
                 isDisposed == that.isDisposed &&
                 defaultFaceBorderColor.equals(that.defaultFaceBorderColor) &&
                 defaultBackBorderColor.equals(that.defaultBackBorderColor) &&
-                defaultFaceUnselectedBackgroundColor.equals(that.defaultFaceUnselectedBackgroundColor) &&
-                defaultBackUnselectedBackgroundColor.equals(that.defaultBackUnselectedBackgroundColor) &&
-                defaultFaceSelectedBackgroundColor.equals(that.defaultFaceSelectedBackgroundColor) &&
-                defaultBackSelectedBackgroundColor.equals(that.defaultBackSelectedBackgroundColor) &&
+                defaultFaceBackgroundColor.equals(that.defaultFaceBackgroundColor) &&
+                defaultBackBackgroundColor.equals(that.defaultBackBackgroundColor) &&
                 defaultFaceHighlightedBackgroundColor.equals(that.defaultFaceHighlightedBackgroundColor) &&
                 defaultBackHighlightedBackgroundColor.equals(that.defaultBackHighlightedBackgroundColor) &&
                 faceBorderColor.equals(that.faceBorderColor) &&
@@ -1228,14 +1122,10 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                 defaultFaceDesignWidthScale,
                 defaultBackDesignHeightScale,
                 defaultBackDesignWidthScale,
-                defaultProportionalYChangeOnSelect,
-                defaultProportionalXChangeOnSelect,
                 defaultFaceBorderColor,
                 defaultBackBorderColor,
-                defaultFaceUnselectedBackgroundColor,
-                defaultBackUnselectedBackgroundColor,
-                defaultFaceSelectedBackgroundColor,
-                defaultBackSelectedBackgroundColor,
+                defaultFaceBackgroundColor,
+                defaultBackBackgroundColor,
                 defaultFaceHighlightedBackgroundColor,
                 defaultBackHighlightedBackgroundColor,
                 cornerRadiusInPixels,
@@ -1245,8 +1135,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                 faceDesignWidthScale,
                 backDesignHeightScale,
                 backDesignWidthScale,
-                proportionalXChangeOnSelect,
-                proportionalYChangeOnSelect,
                 displayProportionalYOffset,
                 displayProportionalXOffset,
                 faceBorderColor,
@@ -1259,10 +1147,8 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                 displayYOffset,
                 displayProportion,
                 displayRotationOffset,
-                selectable,
                 flippable,
                 faceUp,
-                isSelected,
                 backSprite,
                 faceSprite,
                 card,

@@ -1,9 +1,6 @@
 package com.sage.hearts.client.screens;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -159,7 +156,9 @@ public class StartScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
-
+        if(keycode == Input.Keys.P) {
+            game.showPlaygroundScreen();
+        }
         return false;
     }
 
