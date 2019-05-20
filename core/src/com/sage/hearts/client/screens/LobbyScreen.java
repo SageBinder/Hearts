@@ -51,10 +51,10 @@ public class LobbyScreen implements Screen, InputProcessor {
     private Label.LabelStyle labelStyle;
     private TextButton.TextButtonStyle textButtonStyle;
 
-    private FreeTypeFontGenerator.FreeTypeFontParameter playerLabelFontParameter;
-    private FreeTypeFontGenerator.FreeTypeFontParameter changePointsButtonFontParameter;
+    private FreeTypeFontGenerator.FreeTypeFontParameter labelFontParameter;
+    private FreeTypeFontGenerator.FreeTypeFontParameter textButtonFontParameter;
 
-    private FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenSans-Regular.ttf"));
+    private FreeTypeFontGenerator fontGenerator;
 
     private final Color hostColor = new Color(1f, 1f, 0f, 1f);
 
@@ -80,24 +80,24 @@ public class LobbyScreen implements Screen, InputProcessor {
 
         fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenSans-Regular.ttf"));
 
-        playerLabelFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        playerLabelFontParameter.size = textSize;
-        playerLabelFontParameter.incremental = true;
+        labelFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        labelFontParameter.size = textSize;
+        labelFontParameter.incremental = true;
 
-        changePointsButtonFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        changePointsButtonFontParameter.size = textSize;
-        changePointsButtonFontParameter.incremental = true;
+        textButtonFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        textButtonFontParameter.size = textSize;
+        textButtonFontParameter.incremental = true;
     }
 
     private void uiSetup() {
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
 
         labelStyle = skin.get(Label.LabelStyle.class);
-        labelStyle.font = fontGenerator.generateFont(playerLabelFontParameter);
+        labelStyle.font = fontGenerator.generateFont(labelFontParameter);
         labelStyle.font.getData().markupEnabled = true;
 
         textButtonStyle = skin.get(TextButton.TextButtonStyle.class);
-        textButtonStyle.font = fontGenerator.generateFont(changePointsButtonFontParameter);
+        textButtonStyle.font = fontGenerator.generateFont(textButtonFontParameter);
 
         // Creating UI elements:
         gameIPLabel = new Label("IP Label", labelStyle);
@@ -118,7 +118,7 @@ public class LobbyScreen implements Screen, InputProcessor {
                 try {
                     client.sendPacket(new ClientPacket(ClientCode.START_GAME));
                 } catch(IOException e) {
-                    messageLabel.setText("Error connecting to server. Maybe you lost connection?");
+                    messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
                     return;
                 }
                 messageLabel.setText("");
@@ -222,16 +222,43 @@ public class LobbyScreen implements Screen, InputProcessor {
 
             var increasePointsButton = new TextButton("+", textButtonStyle);
             var decreasePointsButton = new TextButton("-", textButtonStyle);
+            var resetPointsButton = new TextButton("R", textButtonStyle);
             increasePointsButton.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-                    // TODO Manually changing a player's points
+                    ClientPacket newPointsPacket = new ClientPacket(ClientCode.PLAYER_POINTS_CHANGE);
+                    newPointsPacket.data.put("player", p.getPlayerNum());
+                    newPointsPacket.data.put("pointschange", 1);
+                    try {
+                        client.sendPacket(newPointsPacket);
+                    } catch(IOException e) {
+                        messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
+                    }
                 }
             });
             decreasePointsButton.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-
+                    ClientPacket newPointsPacket = new ClientPacket(ClientCode.PLAYER_POINTS_CHANGE);
+                    newPointsPacket.data.put("player", p.getPlayerNum());
+                    newPointsPacket.data.put("pointschange", -1);
+                    try {
+                        client.sendPacket(newPointsPacket);
+                    } catch(IOException e) {
+                        messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
+                    }
+                }
+            });
+            resetPointsButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    try {
+                        ClientPacket resetPointsPacket = new ClientPacket(ClientCode.RESET_PLAYER_POINTS);
+                        resetPointsPacket.data.put("player", p.getPlayerNum());
+                        client.sendPacket(resetPointsPacket);
+                    } catch(IOException e) {
+                        messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
+                    }
                 }
             });
 
@@ -248,7 +275,10 @@ public class LobbyScreen implements Screen, InputProcessor {
                         .padLeft(viewport.getWorldWidth() * 0.05f)
                         .minWidth(viewport.getWorldWidth() * 0.05f);
                 playersListTable.add(increasePointsButton)
-                        .padLeft(viewport.getWorldWidth() * 0.05f)
+                        .padLeft(viewport.getWorldWidth() * 0.025f)
+                        .minWidth(viewport.getWorldWidth() * 0.05f);
+                playersListTable.add(resetPointsButton)
+                        .padLeft(viewport.getWorldWidth() * 0.025f)
                         .minWidth(viewport.getWorldWidth() * 0.05f);
             }
 
@@ -286,6 +316,7 @@ public class LobbyScreen implements Screen, InputProcessor {
         viewport.update(width, height, true);
         table.invalidate();
         playersListTable.invalidate();
+        updateUIFromGameState();
     }
 
     @Override

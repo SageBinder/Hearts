@@ -99,6 +99,8 @@ public class GameState {
                     unsuccessfulNameChange(); break;
                 case WAIT_FOR_PLAYERS:
                     waitForPlayers(); break;
+                case NEW_PLAYER_POINTS:
+                    allPlayerPoints(); break;
 
                     // Trick codes:
                 case TRICK_START:
@@ -205,6 +207,16 @@ public class GameState {
                             + clientPlayerNum
                             + " sent by server for host player"
             ));
+        }
+
+        private void allPlayerPoints() {
+            RenderablePlayer updatedPlayer = getPlayerByPlayerNum((Integer)data.get("player"))
+                    .orElseThrow(() -> new InvalidServerPacketException(
+                            "allPlayerPoints() - No player found with player num "
+                                    + data.get("player")
+                                    + " sent by server for updated player"));
+            Integer newPoints = (Integer)data.get("points");
+            updatedPlayer.setAccumulatedPoints((newPoints != null) ? newPoints : 0);
         }
 
         // --- TRICK CODES ---

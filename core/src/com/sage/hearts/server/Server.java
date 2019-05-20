@@ -138,6 +138,34 @@ public class Server extends Thread {
             }
             return false; // This packet does not need to be put into the player's packetQueue
         });
+        player.setInitialPacketHandlerForCode(ClientCode.PLAYER_POINTS_CHANGE, packet -> {
+            if(gameState.lock.tryLock()
+                    && packet.data.get("player") instanceof Integer
+                    && packet.data.get("pointschange") instanceof Integer) {
+                gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
+                    p.incrementPointsOffset((Integer)packet.data.get("pointschange"));
+                    ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
+                    newPlayerPointsPacket.data.put("player", p.getPlayerNum());
+                    newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
+                    gameState.players.sendPacketToAll(newPlayerPointsPacket);
+                });
+                gameState.lock.unlock();
+            }
+            return false;
+        });
+        player.setInitialPacketHandlerForCode(ClientCode.RESET_PLAYER_POINTS, packet -> {
+            if(gameState.lock.tryLock() && packet.data.get("player") instanceof Integer) {
+                gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
+                    p.setPointsOffset(0);
+                    ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
+                    newPlayerPointsPacket.data.put("player", p.getPlayerNum());
+                    newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
+                    gameState.players.sendPacketToAll(newPlayerPointsPacket);
+                });
+                gameState.lock.unlock();
+            }
+            return false;
+        });
         player.setInitialPacketHandlerForCode(ClientCode.PING, packet -> false);
     }
 

@@ -28,6 +28,7 @@ public class Player {
     public final CardList<HeartsCard> collectedPointCards = new CardList<>();
     public HeartsCard play;
     public int accumulatedPoints = 0;
+    public int pointsOffset = 0; // Offset provided by host for manual point changing
 
     private final Socket socket;
     private final DataOutputStream output;
@@ -177,11 +178,27 @@ public class Player {
     }
 
     public synchronized int getAccumulatedPoints() {
+        return accumulatedPoints + pointsOffset;
+    }
+
+    public synchronized int getAccumulatedPointsNoOffset() {
         return accumulatedPoints;
     }
 
     public synchronized void setAccumulatedPoints(int accumulatedPoints) {
         this.accumulatedPoints = accumulatedPoints;
+    }
+
+    public synchronized int getPointsOffset() {
+        return pointsOffset;
+    }
+
+    public synchronized void setPointsOffset(int pointsOffset) {
+        this.pointsOffset = pointsOffset;
+    }
+
+    public synchronized void incrementPointsOffset(int inc) {
+        pointsOffset += inc;
     }
 
     public synchronized void interruptPacketWaiting() {
