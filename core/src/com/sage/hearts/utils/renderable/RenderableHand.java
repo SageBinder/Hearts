@@ -30,7 +30,7 @@ public class RenderableHand<T extends Card & RenderableCard> extends RenderableC
 
     @Override
     public void render(SpriteBatch batch, Viewport viewport, boolean renderBase) {
-        super.rotation = 0;
+        super.rotationRad = 0;
         super.cardHeight = viewport.getWorldHeight() * cardHeightProportion;
         super.regionWidth = viewport.getWorldWidth()
                 - (viewport.getWorldWidth() * leftPaddingProportion)

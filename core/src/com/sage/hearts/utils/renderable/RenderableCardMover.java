@@ -4,11 +4,12 @@ import com.badlogic.gdx.math.MathUtils;
 
 public abstract class RenderableCardMover {
     public final RenderableCard card;
-    public float posSpeed = 1;
+    public float posSpeed = 4;
+    public float sizeSpeed = 4;
     public float rotSpeed = MathUtils.PI2;
-    public float displayPosOffsetSpeed = 1;
-    public float displayRotOffsetSpeed = 1;
-    public float displayProportionSpeed = 1;
+    public float displayPosOffsetSpeed = posSpeed;
+    public float displayRotOffsetSpeed = MathUtils.PI2;
+    public float displayProportionSpeed = 5;
     public float displayProportionalOffsetSpeed = 10;
 
     protected Target target;
@@ -34,6 +35,46 @@ public abstract class RenderableCardMover {
         target.targetDisplayProportionalYOffset = null;
     }
 
+    public Float getTargetX() {
+        return target.targetX;
+    }
+
+    public Float getTargetY() {
+        return target.targetY;
+    }
+
+    public Float getTargetHeight() {
+        return target.targetHeight;
+    }
+
+    public Float getTargetRotation() {
+        return target.targetRotation;
+    }
+
+    public Float getTargetDisplayXOffset() {
+        return target.targetDisplayXOffset;
+    }
+
+    public Float getTargetDisplayYOffset() {
+        return target.targetDisplayYOffset;
+    }
+
+    public Float getTargetDisplayRotationOffset() {
+        return target.targetDisplayRotationOffset;
+    }
+
+    public Float getTargetDisplayProportion() {
+        return target.targetDisplayProportion;
+    }
+
+    public Float getTargetDisplayProportionalXOffset() {
+        return target.targetDisplayProportionalXOffset;
+    }
+
+    public Float getTargetDisplayProportionalYOffset() {
+        return target.targetDisplayProportionalYOffset;
+    }
+
     public RenderableCardMover setTargetX(float targetX) {
         target.targetX = targetX;
         return this;
@@ -50,9 +91,23 @@ public abstract class RenderableCardMover {
         return this;
     }
 
-    public RenderableCardMover setTargetRotation(float targetRotation) {
-        target.targetRotation = targetRotation;
+    public RenderableCardMover setTargetHeight(float targetHeight) {
+        this.target.targetHeight = targetHeight;
         return this;
+    }
+
+    public RenderableCardMover setTargetWidth(float targetWidth) {
+        this.target.targetHeight = targetWidth * RenderableCardEntity.HEIGHT_TO_WIDTH_RATIO;
+        return this;
+    }
+
+    public RenderableCardMover setTargetRotationRad(float targetRotationRad) {
+        target.targetRotation = targetRotationRad;
+        return this;
+    }
+
+    public RenderableCardMover setTargetRotationDeg(float targetRotationDeg) {
+        return setTargetRotationRad(targetRotationDeg * MathUtils.degreesToRadians);
     }
 
     public RenderableCardMover setTargetDisplayXOffset(float targetDisplayXOffset) {
@@ -93,6 +148,12 @@ public abstract class RenderableCardMover {
 
     public static RenderableCardMover scaledDistanceMover(RenderableCard c) {
         return new RenderableCardMover(c) {
+            private float getChange(float deltaVar, float delta, float speed) {
+                return Math.signum(deltaVar) * Math.min(
+                        Math.abs(deltaVar * delta * speed),
+                        Math.abs(deltaVar));
+            }
+
             @Override
             public void update(float delta) {
                 if(target == null) {
@@ -100,81 +161,45 @@ public abstract class RenderableCardMover {
                 }
 
                 RenderableCardEntity entity = card.entity();
-
-                float deltaX;
-                float deltaY;
-                float deltaRot;
-
-                float deltaDisplayXOffset;
-                float deltaDisplayYOffset;
-                float deltaDisplayRotationOffset;
-                float deltaDisplayProportion;
-
-                float deltaProportionalXOffset;
-                float deltaProportionalYOffset;
-
                 if(target.targetX != null) {
-                    deltaX = target.targetX - entity.getX();
-                    float xChange = Math.signum(deltaX) * Math.min(
-                            Math.abs(deltaX * delta * posSpeed),
-                            Math.abs(deltaX));
-                    entity.setX(entity.getX() + xChange);
+                    entity.setX(entity.getX()
+                            + getChange(target.targetX - entity.getX(), delta, posSpeed));
                 }
                 if(target.targetY != null) {
-                    deltaY = target.targetY - entity.getY();
-                    float yChange = Math.signum(deltaY) * Math.min(
-                            Math.abs(deltaY * delta * posSpeed),
-                            Math.abs(deltaY));
-                    entity.setY(entity.getY() + yChange);
+                    entity.setY(entity.getY()
+                            + getChange(target.targetY - entity.getY(), delta, posSpeed));
+                }
+                if(target.targetHeight != null) {
+                    entity.setHeight(entity.getHeight()
+                            + getChange(target.targetHeight - entity.getHeight(), delta, sizeSpeed));
                 }
                 if(target.targetRotation != null) {
-                    deltaRot = target.targetRotation - entity.getRotationRad();
-                    float rotChange = Math.signum(deltaRot) * Math.min(
-                            Math.abs(deltaRot * delta * rotSpeed),
-                            Math.abs(deltaRot));
-                    entity.rotateRad(rotChange);
+                    entity.setRotationRad(entity.getRotationRad()
+                            + getChange(target.targetRotation - entity.getRotationRad(), delta, rotSpeed));
                 }
                 if(target.targetDisplayXOffset != null) {
-                    deltaDisplayXOffset = target.targetDisplayXOffset - entity.getDisplayXOffset();
-                    float displayXOffsetChange = Math.signum(deltaDisplayXOffset) * Math.min(
-                            Math.abs(deltaDisplayXOffset * delta * displayPosOffsetSpeed),
-                            Math.abs(deltaDisplayXOffset));
-                    entity.setDisplayXOffset(entity.getDisplayXOffset() + displayXOffsetChange);
+                    entity.setDisplayXOffset(entity.getDisplayXOffset()
+                            + getChange(target.targetDisplayXOffset - entity.getDisplayXOffset(), delta, displayPosOffsetSpeed));
                 }
                 if(target.targetDisplayYOffset != null) {
-                    deltaDisplayYOffset = target.targetDisplayYOffset - entity.getDisplayYOffset();
-                    float displayYOffsetChange = Math.signum(deltaDisplayYOffset) * Math.min(
-                            Math.abs(deltaDisplayYOffset * delta * displayPosOffsetSpeed),
-                            Math.abs(deltaDisplayYOffset));
-                    entity.setDisplayYOffset(entity.getDisplayYOffset() + displayYOffsetChange);
+                    entity.setDisplayYOffset(entity.getDisplayYOffset()
+                            + getChange(target.targetDisplayYOffset - entity.getDisplayYOffset(), delta, displayPosOffsetSpeed));
                 }
                 if(target.targetDisplayRotationOffset != null) {
-                    deltaDisplayRotationOffset = target.targetDisplayRotationOffset - entity.getDisplayRotationOffsetRad();
-                    float displayRotationOffsetChange = Math.signum(deltaDisplayRotationOffset) * Math.min(
-                            Math.abs(deltaDisplayRotationOffset * delta * displayRotOffsetSpeed),
-                            Math.abs(deltaDisplayRotationOffset));
-                    entity.setDisplayRotationOffsetRad(entity.getDisplayRotationOffsetRad() + displayRotationOffsetChange);
+                    entity.setDisplayRotationOffsetRad(entity.getDisplayRotationOffsetRad()
+                            + getChange(target.targetDisplayRotationOffset - entity.getDisplayRotationOffsetRad(), delta, displayRotOffsetSpeed));
                 }
                 if(target.targetDisplayProportion != null) {
-                    deltaDisplayProportion = target.targetDisplayProportion - entity.getDisplayProportion();
-                    float displayProportionChange = Math.signum(deltaDisplayProportion) * Math.min(
-                            Math.abs(deltaDisplayProportion * delta * displayProportionSpeed),
-                            Math.abs(deltaDisplayProportion));
-                    entity.setDisplayProportion(entity.getDisplayProportion() * displayProportionChange);
+                    entity.setDisplayProportion(entity.getDisplayProportion()
+                            + getChange(target.targetDisplayProportion - entity.getDisplayProportion(), delta, displayProportionSpeed));
                 }
                 if(target.targetDisplayProportionalXOffset != null) {
-                    deltaProportionalXOffset = target.targetDisplayProportionalXOffset - entity.getDisplayProportionalXOffset();
-                    float proportionalXOffsetChange = Math.signum(deltaProportionalXOffset) * Math.min(
-                            Math.abs(deltaProportionalXOffset * delta * displayProportionalOffsetSpeed),
-                            Math.abs(deltaProportionalXOffset));
-                    entity.setDisplayProportionalXOffset(entity.getDisplayProportionalXOffset() + proportionalXOffsetChange);
+                    entity.setDisplayProportionalXOffset(entity.getDisplayProportionalXOffset()
+                            + getChange(target.targetDisplayProportionalXOffset - entity.getDisplayProportionalXOffset(), delta, displayProportionalOffsetSpeed));
                 }
                 if(target.targetDisplayProportionalYOffset != null) {
-                    deltaProportionalYOffset = target.targetDisplayProportionalYOffset - entity.getDisplayProportionalYOffset();
-                    float proportionalYOffsetChange = Math.signum(deltaProportionalYOffset) * Math.min(
-                            Math.abs(deltaProportionalYOffset * delta * displayProportionalOffsetSpeed),
-                            Math.abs(deltaProportionalYOffset));
-                    entity.setDisplayProportionalYOffset(entity.getDisplayProportionalYOffset() + proportionalYOffsetChange);
+                    entity.setDisplayProportionalYOffset(entity.getDisplayProportionalYOffset()
+                            + getChange(target.targetDisplayProportionalYOffset - entity.getDisplayProportionalYOffset(), delta, displayProportionalOffsetSpeed));
                 }
             }
         };
@@ -183,6 +208,7 @@ public abstract class RenderableCardMover {
     public class Target {
         public Float targetX = null;
         public Float targetY = null;
+        public Float targetHeight = null;
         public Float targetRotation = null;
 
         public Float targetDisplayXOffset = null;

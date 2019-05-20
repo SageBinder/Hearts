@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -27,6 +28,8 @@ public class PlaygroundScreen implements Screen, InputProcessor {
     private RenderableHeartsCard test = new RenderableHeartsCard(Rank.QUEEN, Suit.SPADES);
     private RenderableCardGroup<RenderableHeartsCard> cards = new RenderableCardGroup<>();
 
+    private int rotDirection = 1;
+
     public PlaygroundScreen(HeartsGame game) {
         this.game = game;
         this.gameState = game.getGameState();
@@ -44,7 +47,8 @@ public class PlaygroundScreen implements Screen, InputProcessor {
     public void render(float delta) {
         HeartsGame.clearScreen();
 
-        test.entity().rotateDeg(delta * 360 / 10);
+        test.entity().rotateDeg((delta * 360 / 10) * rotDirection);
+        cards.rotationRad += (MathUtils.PI2 * delta / 10f) * rotDirection;
         test.update(delta);
         cards.update(delta);
 
@@ -95,6 +99,10 @@ public class PlaygroundScreen implements Screen, InputProcessor {
             cards.disposeAll();
             cards.clear();
             game.showStartScreen();
+        } else if(keycode == Input.Keys.SPACE) {
+            cards.useCardMover = !cards.useCardMover;
+        } else if(keycode == Input.Keys.R) {
+            rotDirection *= -1;
         }
         return false;
     }
@@ -186,15 +194,15 @@ public class PlaygroundScreen implements Screen, InputProcessor {
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
-        var worldPos = viewport.unproject(new Vector2(screenX, screenY));
-        cards.forEach(c -> c.entity.deselect());
-        for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
-            var entity = i.previous().entity();
-            if(entity.displayRectContainsPoint(worldPos) || entity.baseRectContainsPoint(worldPos)) {
-                entity.setSelected(true);
-                break;
-            }
-        }
+//        var worldPos = viewport.unproject(new Vector2(screenX, screenY));
+//        cards.forEach(c -> c.entity.deselect());
+//        for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
+//            var entity = i.previous().entity();
+//            if(entity.displayRectContainsPoint(worldPos) || entity.baseRectContainsPoint(worldPos)) {
+//                entity.setSelected(true);
+//                break;
+//            }
+//        }
         return false;
     }
 

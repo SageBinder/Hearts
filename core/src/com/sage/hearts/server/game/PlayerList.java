@@ -45,6 +45,10 @@ public class PlayerList extends ArrayList<Player> {
     }
 
     public void sendPlayersToAll() throws MultiplePlayersDisconnectedException {
+        if(isEmpty()) {
+            return;
+        }
+
         HashMap<Integer, String> players =
                 stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getName, (a, b) -> b, HashMap::new));
         HashMap<Integer, Integer> accumulatedPoints =

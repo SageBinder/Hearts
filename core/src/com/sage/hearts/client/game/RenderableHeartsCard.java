@@ -147,8 +147,8 @@ public class RenderableHeartsCard extends HeartsCard
                     mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnSelect);
                     mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnSelect);
                 } else {
-                    setBackBackgroundColor(defaultBackBackgroundColor);
                     setFaceBackgroundColor(defaultFaceBackgroundColor);
+                    setBackBackgroundColor(defaultBackBackgroundColor);
                     mover.setTargetDisplayProportionalXOffset(0);
                     mover.setTargetDisplayProportionalYOffset(0);
                 }

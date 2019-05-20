@@ -135,8 +135,6 @@ public class LobbyScreen implements Screen, InputProcessor {
         // Organizing UI elements into main table:
         table = new Table();
         table.setFillParent(true);
-        table.debug();
-        playersListTable.debug();
         table.padTop(0);
 
         table.row().padTop(0);
@@ -368,10 +366,11 @@ public class LobbyScreen implements Screen, InputProcessor {
                         messageLabel.setText("");
                         quitConfirmationFlag = false;
                     }
-                }, 5);
+                }, 3);
             } else {
                 client.quit();
                 game.closeGameServer();
+                gameState.message = "You left the lobby";
                 game.showStartScreen();
             }
         }

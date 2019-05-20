@@ -13,13 +13,14 @@ import java.util.Collection;
 public class RenderableCardGroup<T extends Card & RenderableCard> extends RenderableCardList<T> {
     public Vector2 pos = new Vector2();
 
+    public boolean useCardMover = true;
     public float cardHeight = Gdx.graphics.getHeight() / 15f,
             regionWidth = Gdx.graphics.getWidth() / 10f,
             prefDivisionProportion = 0.2f,
-            rotation = 0.0f;
+            rotationRad = 0.0f;
 
     private ShapeRenderer debugRenderer = new ShapeRenderer();
-    private boolean inDebugMode = false;
+    private boolean inDebugMode = true;
 
 
     public RenderableCardGroup() {
@@ -38,40 +39,47 @@ public class RenderableCardGroup<T extends Card & RenderableCard> extends Render
     @Override
     public void render(SpriteBatch batch, Viewport viewport, boolean renderBase) {
         float cardPositionRegionWidth = regionWidth - (RenderableCardEntity.WIDTH_TO_HEIGHT_RATIO * cardHeight);
-
         float division = Math.min(RenderableCardEntity.WIDTH_TO_HEIGHT_RATIO * cardHeight * prefDivisionProportion,
                 cardPositionRegionWidth / (size() - 1));
-
         float offset = MathUtils.clamp((cardPositionRegionWidth * 0.5f) - (0.5f * division * (size() - 1)),
                 0,
                 cardPositionRegionWidth * 0.5f);
-        rotation %= MathUtils.PI2;
+
+        boolean wrapped;
+        if(wrapped = rotationRad > MathUtils.PI2) {
+            rotationRad %= MathUtils.PI2;
+        }
 
         for(int i = 0; i < size(); i++) {
             RenderableCardEntity e = get(i).entity();
-            float rotCos = MathUtils.cos(rotation);
-            float rotSin = MathUtils.sin(rotation);
+
+            float rotCos = MathUtils.cos(rotationRad);
+            float rotSin = MathUtils.sin(rotationRad);
             float relativeX = i * division + offset;
-            float displayProportionalXOffset = e.getDisplayProportionalXOffset();
-            float displayProportionalYOffset = e.getDisplayProportionalYOffset();
-            float transformedDisplayProportionalXOffset = (rotCos * displayProportionalXOffset) - (rotSin * displayProportionalYOffset);
-            float transformedDisplayProportionalYOffset = (rotSin * displayProportionalXOffset) + (rotCos * displayProportionalYOffset);
-            e.setOriginProportion(0, 0)
-                    .setRotationRad(rotation)
-                    .setHeight(cardHeight)
-                    .setX(pos.x + (relativeX * rotCos))
-                    .setY(pos.y + (relativeX * rotSin))
-                    .setDisplayProportionalXOffset(transformedDisplayProportionalXOffset)
-                    .setDisplayProportionalYOffset(transformedDisplayProportionalYOffset);
+            e.setOriginProportion(0, 0);
+            if(useCardMover) {
+                if(wrapped) {
+                    // Gotta subtract PI2 (not mod PI2) so that the rotation direction is correct
+                    e.rotateRad(-MathUtils.PI2);
+                }
+                e.mover.setTargetRotationRad(rotationRad)
+                        .setTargetHeight(cardHeight)
+                        .setTargetX(pos.x + (relativeX * rotCos))
+                        .setTargetY(pos.y + (relativeX * rotSin));
+            } else {
+                e.setRotationRad(rotationRad)
+                        .setHeight(cardHeight)
+                        .setX(pos.x + (relativeX * rotCos))
+                        .setY(pos.y + (relativeX * rotSin));
+            }
         }
 
+        super.render(batch, viewport, renderBase);
         if(inDebugMode) {
             batch.end();
             renderDebugLines(viewport);
             batch.begin();
         }
-
-        super.render(batch, viewport, renderBase);
     }
 
     private void renderDebugLines(Viewport viewport) {
@@ -87,6 +95,10 @@ public class RenderableCardGroup<T extends Card & RenderableCard> extends Render
 
         debugRenderer.line(viewport.getWorldWidth() / 2, 0, viewport.getWorldWidth() / 2, viewport.getWorldHeight());
         debugRenderer.line(0, viewport.getWorldHeight() / 2, viewport.getWorldWidth(), viewport.getWorldHeight() / 2);
+
+        for(int i = 0; i < size() - 1; i++) {
+            debugRenderer.line(get(i).getDisplayX(), get(i).getDisplayY(), get(i + 1).getDisplayX(), get(i + 1).getDisplayY());
+        }
 
         debugRenderer.end();
     }

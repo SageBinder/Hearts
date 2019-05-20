@@ -67,7 +67,7 @@ class CardPolygon {
         rect.setPosition(position.x, position.y);
     }
 
-    void setRotation(float deg) {
+    void setRotationDeg(float deg) {
         rect.setRotation(deg);
     }
 
