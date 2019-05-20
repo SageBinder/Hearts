@@ -1,19 +1,19 @@
 package com.sage.hearts.client.screens;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.client.HeartsGame;
@@ -57,6 +57,9 @@ public class LobbyScreen implements Screen, InputProcessor {
     private FreeTypeFontGenerator fontGenerator;
 
     private final Color hostColor = new Color(1f, 1f, 0f, 1f);
+
+    private boolean quitConfirmationFlag = false;
+    private Timer quitConfirmationTimer = new Timer();
 
     public LobbyScreen(HeartsGame game) {
         this.game = game;
@@ -104,7 +107,7 @@ public class LobbyScreen implements Screen, InputProcessor {
         gameIPLabel.setAlignment(Align.center);
         gameIPLabel.setWrap(true);
 
-        messageLabel = new Label("Welcome", labelStyle);
+        messageLabel = new Label("", labelStyle);
         messageLabel.setAlignment(Align.center);
         messageLabel.setWrap(true);
 
@@ -223,42 +226,35 @@ public class LobbyScreen implements Screen, InputProcessor {
             var increasePointsButton = new TextButton("+", textButtonStyle);
             var decreasePointsButton = new TextButton("-", textButtonStyle);
             var resetPointsButton = new TextButton("R", textButtonStyle);
-            increasePointsButton.addListener(new ChangeListener() {
+
+            ((ClickListener)increasePointsButton.getListeners().get(0)).setButton(-1);
+            increasePointsButton.addListener(new ClickListener(-1) {
                 @Override
-                public void changed(ChangeEvent event, Actor actor) {
-                    ClientPacket newPointsPacket = new ClientPacket(ClientCode.PLAYER_POINTS_CHANGE);
-                    newPointsPacket.data.put("player", p.getPlayerNum());
-                    newPointsPacket.data.put("pointschange", 1);
-                    try {
-                        client.sendPacket(newPointsPacket);
-                    } catch(IOException e) {
-                        messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
+                public void clicked(InputEvent event, float x, float y) {
+                    if(event.getButton() == Input.Buttons.LEFT) {
+                        requestPlayerPointsChange(p.getPlayerNum(), 1);
+                    } else if(event.getButton() == Input.Buttons.RIGHT) {
+                        requestPlayerPointsChange(p.getPlayerNum(), 10);
                     }
                 }
             });
-            decreasePointsButton.addListener(new ChangeListener() {
+
+            ((ClickListener)decreasePointsButton.getListeners().get(0)).setButton(-1);
+            decreasePointsButton.addListener(new ClickListener(-1) {
                 @Override
-                public void changed(ChangeEvent event, Actor actor) {
-                    ClientPacket newPointsPacket = new ClientPacket(ClientCode.PLAYER_POINTS_CHANGE);
-                    newPointsPacket.data.put("player", p.getPlayerNum());
-                    newPointsPacket.data.put("pointschange", -1);
-                    try {
-                        client.sendPacket(newPointsPacket);
-                    } catch(IOException e) {
-                        messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
+                public void clicked(InputEvent event, float x, float y) {
+                    if(event.getButton() == Input.Buttons.LEFT) {
+                        requestPlayerPointsChange(p.getPlayerNum(), -1);
+                    } else if(event.getButton() == Input.Buttons.RIGHT) {
+                        requestPlayerPointsChange(p.getPlayerNum(), -10);
                     }
                 }
             });
+
             resetPointsButton.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
-                    try {
-                        ClientPacket resetPointsPacket = new ClientPacket(ClientCode.RESET_PLAYER_POINTS);
-                        resetPointsPacket.data.put("player", p.getPlayerNum());
-                        client.sendPacket(resetPointsPacket);
-                    } catch(IOException e) {
-                        messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
-                    }
+                    requestToResetPlayerPointsChange(p.getPlayerNum());
                 }
             });
 
@@ -311,6 +307,27 @@ public class LobbyScreen implements Screen, InputProcessor {
         }
     }
 
+    private void requestPlayerPointsChange(int playerNum, int pointsChange) {
+        ClientPacket newPointsPacket = new ClientPacket(ClientCode.PLAYER_POINTS_CHANGE);
+        newPointsPacket.data.put("player", playerNum);
+        newPointsPacket.data.put("pointschange", pointsChange);
+        try {
+            client.sendPacket(newPointsPacket);
+        } catch(IOException e) {
+            messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
+        }
+    }
+
+    private void requestToResetPlayerPointsChange(int playerNum) {
+        try {
+            ClientPacket resetPointsPacket = new ClientPacket(ClientCode.RESET_PLAYER_POINTS);
+            resetPointsPacket.data.put("player", playerNum);
+            client.sendPacket(resetPointsPacket);
+        } catch(IOException e) {
+            messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
+        }
+    }
+
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
@@ -341,6 +358,23 @@ public class LobbyScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
+        if(keycode == Input.Keys.ESCAPE) {
+            if(!quitConfirmationFlag) {
+                messageLabel.setText("[YELLOW]Press ESC again to leave the lobby[]");
+                quitConfirmationFlag = true;
+                quitConfirmationTimer.scheduleTask(new Timer.Task() {
+                    @Override
+                    public void run() {
+                        messageLabel.setText("");
+                        quitConfirmationFlag = false;
+                    }
+                }, 5);
+            } else {
+                client.quit();
+                game.closeGameServer();
+                game.showStartScreen();
+            }
+        }
         return false;
     }
 
