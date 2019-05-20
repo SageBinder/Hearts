@@ -70,17 +70,14 @@ public class GameScreen implements Screen, InputProcessor {
     }
 
     private void uiSetup() {
-        var messageLabelFont = fontGenerator.generateFont(messageLabelFontParameter);
-        var actionButtonFont = fontGenerator.generateFont(actionButtonFontParameter);
-
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
 
         var messageLabelStyle = skin.get(Label.LabelStyle.class);
-        messageLabelStyle.font = messageLabelFont;
+        messageLabelStyle.font = fontGenerator.generateFont(messageLabelFontParameter);
         messageLabelStyle.font.getData().markupEnabled = true;
 
         var actionButtonStyle = skin.get(TextButton.TextButtonStyle.class);
-        actionButtonStyle.font = messageLabelFont;
+        actionButtonStyle.font = fontGenerator.generateFont(actionButtonFontParameter);
 
         // Creating UI elements:
         messageLabel = new Label("", messageLabelStyle);

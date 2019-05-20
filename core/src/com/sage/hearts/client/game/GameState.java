@@ -36,6 +36,7 @@ public class GameState {
 
     public RenderablePlayer turnPlayer;
     public RenderablePlayer leadingPlayer;
+    public RenderablePlayer hostPlayer;
 
     public RenderablePlayer thisPlayer;
     public final RenderableHand<RenderableHeartsCard> thisPlayerHand = new RenderableHand<>();
@@ -161,12 +162,12 @@ public class GameState {
         }
 
         private void playerDisconnected() {
-            message = "A player has disconnected!";
+            message = "[YELLOW]A player has disconnected!";
             game.showLobbyScreen();
         }
 
         private void couldNotStartGame() {
-            message = "Error: cannot start game. Either there aren't enough players or the game is already running.";
+            message = "[YELLOW]Error: cannot start game. Either there aren't enough players or the game is already running.";
         }
 
         private void unsuccessfulNameChange() {
@@ -177,7 +178,7 @@ public class GameState {
             var newPlayersMap = (Map<Integer, String>)data.get("players");
             var accumulatedPointsMap = (Map<Integer, Integer>)data.get("points");
             int clientPlayerNum = (Integer)(data.get("you"));
-            int hostNum = (Integer)(data.get("host"));
+            int hostPlayerNum = (Integer)(data.get("host"));
 
             for(int i = 0; i < GameState.this.players.length; i++) {
                 if(players[i] != null) {
@@ -190,7 +191,7 @@ public class GameState {
             for(int i = 0; i < players.length && keyIter.hasNext(); i++) {
                 Integer playerNum = keyIter.next();
                 players[i] = new RenderablePlayer(playerNum, newPlayersMap.get(playerNum));
-                players[i].setHost(playerNum == hostNum);
+                players[i].setHost(playerNum == hostPlayerNum);
                 players[i].setIsClientPlayer(playerNum == clientPlayerNum);
                 players[i].setAccumulatedPoints(accumulatedPointsMap.getOrDefault(playerNum, 0));
             }
@@ -198,6 +199,11 @@ public class GameState {
                     "waitForPlayers() - No player found with player num "
                             + clientPlayerNum
                             + " sent by server for client player"
+            ));
+            hostPlayer = getPlayerByPlayerNum(hostPlayerNum).orElseThrow(() -> new InvalidServerPacketException(
+                    "waitForPlayers() - No player found with player num "
+                            + clientPlayerNum
+                            + " sent by server for host player"
             ));
         }
 

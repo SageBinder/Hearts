@@ -41,6 +41,8 @@ public class Server extends Thread {
         ServerSocketHints hints = new ServerSocketHints();
         hints.acceptTimeout = 0;
         serverSocket = new NetJavaServerSocketImpl(Net.Protocol.TCP, port, hints);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(this::close));
     }
 
     @Override
@@ -49,7 +51,7 @@ public class Server extends Thread {
         connectionAcceptorThread.start();
 
         Timer pingerTimer = new Timer();
-        pingerTimer.scheduleAtFixedRate(pingerTask, PING_PERIOD, PING_PERIOD);
+        pingerTimer.scheduleAtFixedRate(pruneDisconnectedPlayersTask, PING_PERIOD, PING_PERIOD);
 
         outerLoop:
         while(!closed) {
@@ -209,16 +211,13 @@ public class Server extends Thread {
         }
     };
 
-    private TimerTask pingerTask = new TimerTask() {
+    private TimerTask pruneDisconnectedPlayersTask = new TimerTask() {
         @Override
         public void run() {
             // We don't need a timeout on this lock because it doesn't need to run while the round is running.
             // We need to tryLock() instead of lock() because the Timer will try to catch up with missed executions.
             if(gameState.lock.tryLock()) {
-                try {
-                    gameState.players.sendPacketToAll(ServerPacket.pingPacket());
-                } catch(MultiplePlayersDisconnectedException e) {
-                    gameState.players.removeDisconnectedPlayers();
+                if(gameState.players.removeDisconnectedPlayers()) {
                     sendPlayersToAllUntilNoDisconnections();
                 }
                 gameState.lock.unlock();

@@ -48,15 +48,11 @@ public class LobbyScreen implements Screen, InputProcessor {
     private TextButton startGameButton;
     private Label gameStateMessageLabel;
 
-    private Label.LabelStyle playerLabelStyle;
-    private TextButton.TextButtonStyle changePointsButtonStyle;
+    private Label.LabelStyle labelStyle;
+    private TextButton.TextButtonStyle textButtonStyle;
 
     private FreeTypeFontGenerator.FreeTypeFontParameter playerLabelFontParameter;
     private FreeTypeFontGenerator.FreeTypeFontParameter changePointsButtonFontParameter;
-    private FreeTypeFontGenerator.FreeTypeFontParameter gameIPLabelFontParameter;
-    private FreeTypeFontGenerator.FreeTypeFontParameter messageLabelFontParameter;
-    private FreeTypeFontGenerator.FreeTypeFontParameter startGameButtonFontParameter;
-    private FreeTypeFontGenerator.FreeTypeFontParameter gameStateMessageLabelFontParameter;
 
     private FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenSans-Regular.ttf"));
 
@@ -91,67 +87,31 @@ public class LobbyScreen implements Screen, InputProcessor {
         changePointsButtonFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
         changePointsButtonFontParameter.size = textSize;
         changePointsButtonFontParameter.incremental = true;
-
-        gameIPLabelFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        gameIPLabelFontParameter.size = textSize;
-        gameIPLabelFontParameter.incremental = true;
-
-        messageLabelFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        messageLabelFontParameter.size = textSize;
-        messageLabelFontParameter.incremental = true;
-
-        startGameButtonFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        startGameButtonFontParameter.size = textSize;
-        startGameButtonFontParameter.incremental = true;
-
-        gameStateMessageLabelFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        gameStateMessageLabelFontParameter.size = textSize;
-        gameStateMessageLabelFontParameter.incremental = true;
     }
 
     private void uiSetup() {
-        var playerLabelFont = fontGenerator.generateFont(playerLabelFontParameter);
-        var changePointsButtonFont = fontGenerator.generateFont(changePointsButtonFontParameter);
-        var gameIPLabelFont = fontGenerator.generateFont(gameIPLabelFontParameter);
-        var messageLabelFont = fontGenerator.generateFont(messageLabelFontParameter);
-        var startGameButtonFont = fontGenerator.generateFont(startGameButtonFontParameter);
-        var gameStateMessageLabelFont = fontGenerator.generateFont(gameStateMessageLabelFontParameter);
-
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
 
-        playerLabelStyle = skin.get(Label.LabelStyle.class);
-        playerLabelStyle.font = playerLabelFont;
-        playerLabelStyle.font.getData().markupEnabled = true;
+        labelStyle = skin.get(Label.LabelStyle.class);
+        labelStyle.font = fontGenerator.generateFont(playerLabelFontParameter);
+        labelStyle.font.getData().markupEnabled = true;
 
-        changePointsButtonStyle = skin.get(TextButton.TextButtonStyle.class);
-        changePointsButtonStyle.font = changePointsButtonFont;
-
-        var gameIPLabelStyle = skin.get(Label.LabelStyle.class);
-        gameIPLabelStyle.font = gameIPLabelFont;
-        gameIPLabelStyle.font.getData().markupEnabled = true;
-
-        var messageLabelStyle = skin.get(Label.LabelStyle.class);
-        messageLabelStyle.font = messageLabelFont;
-        messageLabelStyle.font.getData().markupEnabled = true;
-
-        var startGameButtonStyle = skin.get(TextButton.TextButtonStyle.class);
-        startGameButtonStyle.font = startGameButtonFont;
-
-        var gameStateMessageLabelStyle = skin.get(Label.LabelStyle.class);
-        gameStateMessageLabelStyle.font = gameStateMessageLabelFont;
-        gameStateMessageLabelStyle.font.getData().markupEnabled = true;
+        textButtonStyle = skin.get(TextButton.TextButtonStyle.class);
+        textButtonStyle.font = fontGenerator.generateFont(changePointsButtonFontParameter);
 
         // Creating UI elements:
-        gameIPLabel = new Label("IP Label", gameIPLabelStyle);
+        gameIPLabel = new Label("IP Label", labelStyle);
         gameIPLabel.setAlignment(Align.center);
+        gameIPLabel.setWrap(true);
 
-        messageLabel = new Label("", messageLabelStyle);
+        messageLabel = new Label("Welcome", labelStyle);
         messageLabel.setAlignment(Align.center);
+        messageLabel.setWrap(true);
 
         playersListTable = new Table();
         playersListTable.align(Align.center);
 
-        startGameButton = new TextButton("Start Game", startGameButtonStyle);
+        startGameButton = new TextButton("Start Game", textButtonStyle);
         startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -165,15 +125,24 @@ public class LobbyScreen implements Screen, InputProcessor {
             }
         });
 
-        gameStateMessageLabel = new Label("", messageLabelStyle);
+        gameStateMessageLabel = new Label("", labelStyle);
         gameStateMessageLabel.setAlignment(Align.center);
+        gameStateMessageLabel.setWrap(true);
 
         // Organizing UI elements into main table:
         table = new Table();
         table.setFillParent(true);
+        table.debug();
+        playersListTable.debug();
+        table.padTop(0);
+
+        table.row().padTop(0);
+        table.add(gameIPLabel).padBottom(0).width(viewport.getWorldWidth() * 0.9f);
 
         table.row();
-        table.add(gameIPLabel).padBottom(viewport.getWorldHeight() * 0.1f);
+        table.add(messageLabel)
+                .padBottom(viewport.getWorldHeight() * 0.1f)
+                .width(viewport.getWorldWidth() * 0.9f);
 
         table.row();
         table.add(playersListTable).align(Align.center).maxWidth(viewport.getWorldWidth() / 2f);
@@ -182,7 +151,7 @@ public class LobbyScreen implements Screen, InputProcessor {
         table.add(startGameButton);
 
         table.row();
-        table.add(gameStateMessageLabel);
+        table.add(gameStateMessageLabel).width(viewport.getWorldWidth() * 0.8f);
 
         stage = new Stage(viewport);
         stage.addActor(table);
@@ -211,8 +180,6 @@ public class LobbyScreen implements Screen, InputProcessor {
                     gameIPLabel.setText("[YELLOW]Error: could not determine your IP");
                 }
             }).start();
-        } else {
-            gameIPLabel.setText("Connected to [CYAN]" + client.serverIP + "[]:[ORANGE]" + client.port);
         }
 
         inputProcessorsSetup();
@@ -233,9 +200,9 @@ public class LobbyScreen implements Screen, InputProcessor {
     private void updateUIFromGameState() {
         float groupSpacing = viewport.getWorldWidth() / 12f;
 
-        var pNumHeaderLabel = new Label("P#", playerLabelStyle);
-        var pNameHeaderLabel = new Label("NAME", playerLabelStyle);
-        var pCallRankHeaderLabel = new Label("POINTS", playerLabelStyle);
+        var pNumHeaderLabel = new Label("P#", labelStyle);
+        var pNameHeaderLabel = new Label("NAME", labelStyle);
+        var pCallRankHeaderLabel = new Label("POINTS", labelStyle);
         pNameHeaderLabel.setAlignment(Align.center);
 
         playersListTable.clearChildren();
@@ -249,12 +216,12 @@ public class LobbyScreen implements Screen, InputProcessor {
         playersListTable.add(pCallRankHeaderLabel).padLeft(groupSpacing);
 
         Arrays.stream(gameState.players).filter(Objects::nonNull).forEach(p -> {
-            var playerNumLabel = new Label("P" + p.getPlayerNum(), playerLabelStyle);
-            var playerNameLabel = new Label(p.getName(), playerLabelStyle);
-            var pointsLabel = new Label(p.getAccumulatedPoints() + "", playerLabelStyle);
+            var playerNumLabel = new Label("P" + p.getPlayerNum(), labelStyle);
+            var playerNameLabel = new Label(p.getName(), labelStyle);
+            var pointsLabel = new Label(p.getAccumulatedPoints() + "", labelStyle);
 
-            var increasePointsButton = new TextButton("+", changePointsButtonStyle);
-            var decreasePointsButton = new TextButton("-", changePointsButtonStyle);
+            var increasePointsButton = new TextButton("+", textButtonStyle);
+            var decreasePointsButton = new TextButton("-", textButtonStyle);
             increasePointsButton.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
@@ -304,6 +271,14 @@ public class LobbyScreen implements Screen, InputProcessor {
             startGameButton.setVisible(false);
             startGameButton.setDisabled(true);
         }
+
+        gameStateMessageLabel.setText(gameState.message);
+        if(gameState.thisPlayer != null && !gameState.thisPlayer.isHost()) {
+            gameIPLabel.setText("Connected to [YELLOW]"
+                    + gameState.hostPlayer.getName()
+                    + (gameState.hostPlayer.getName().charAt(gameState.hostPlayer.getName().length() - 1) == 's' ? "'" : "'s")
+                    + "[] lobby hosted on [CYAN]" + client.serverIP + "[]:[ORANGE]" + client.port);
+        }
     }
 
     @Override
@@ -330,7 +305,7 @@ public class LobbyScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
-
+        fontGenerator.dispose();
     }
 
     @Override

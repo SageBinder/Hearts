@@ -4,10 +4,12 @@ import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.client.HeartsGame;
@@ -26,9 +28,11 @@ public class StartScreen implements Screen, InputProcessor {
     private TextButton createGameButton;
     private TextButton joinGameButton;
     private TextButton optionsButton;
+    private Label gameStateMessageLabel;
 
     private FreeTypeFontGenerator fontGenerator;
     private FreeTypeFontGenerator.FreeTypeFontParameter buttonFontParameter;
+    private FreeTypeFontGenerator.FreeTypeFontParameter labelFontParameter;
 
     public StartScreen(HeartsGame game) {
         this.game = game;
@@ -52,6 +56,10 @@ public class StartScreen implements Screen, InputProcessor {
         buttonFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
         buttonFontParameter.size = (int)(Math.max(Gdx.graphics.getHeight(), Gdx.graphics.getWidth()) * textProportion);
         buttonFontParameter.incremental = true;
+
+        labelFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        labelFontParameter.size = (int)(Math.max(Gdx.graphics.getHeight(), Gdx.graphics.getWidth()) * textProportion);
+        labelFontParameter.incremental = true;
     }
 
     private void uiSetup() {
@@ -60,8 +68,11 @@ public class StartScreen implements Screen, InputProcessor {
         var textButtonStyle = skin.get(TextButton.TextButtonStyle.class);
         textButtonStyle.font = fontGenerator.generateFont(buttonFontParameter);
 
+        var labelStyle = skin.get(Label.LabelStyle.class);
+        labelStyle.font = fontGenerator.generateFont(labelFontParameter);
+
         // Creating UI elements:
-        createGameButton = new TextButton("Create game", textButtonStyle);
+        createGameButton = new TextButton("Host game", textButtonStyle);
         createGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -85,6 +96,10 @@ public class StartScreen implements Screen, InputProcessor {
             }
         });
 
+        gameStateMessageLabel = new Label("", labelStyle);
+        gameStateMessageLabel.setAlignment(Align.center);
+        gameStateMessageLabel.setWrap(true);
+
         // Organizing UI elements in table:
         table = new Table().top();
         table.setFillParent(true);
@@ -94,15 +109,18 @@ public class StartScreen implements Screen, InputProcessor {
                 .prefWidth(viewport.getWorldWidth() * 0.3f)
                 .prefHeight(viewport.getWorldHeight()* 0.1f);
 
-        table.row().padTop(viewport.getWorldHeight() * 0.25f);
+        table.row().padTop(viewport.getWorldHeight() * 0.18f);
         table.add(joinGameButton)
                 .prefWidth(viewport.getWorldWidth() * 0.3f)
                 .prefHeight(viewport.getWorldHeight()* 0.1f);
 
-        table.row().padTop(viewport.getWorldHeight() * 0.25f);
+        table.row().padTop(viewport.getWorldHeight() * 0.18f);
         table.add(optionsButton)
                 .prefWidth(viewport.getWorldWidth() * 0.3f)
                 .prefHeight(viewport.getWorldHeight()* 0.1f);
+
+        table.row().padTop(viewport.getWorldHeight() * 0.1f);
+        table.add(gameStateMessageLabel).width(viewport.getWorldWidth() * 0.8f);
 
         stage = new Stage(viewport);
         stage.addActor(table);
@@ -124,6 +142,7 @@ public class StartScreen implements Screen, InputProcessor {
     public void render(float delta) {
         HeartsGame.clearScreen();
 
+        gameStateMessageLabel.setText(gameState.message);
         stage.act(delta);
         stage.draw();
     }

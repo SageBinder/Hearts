@@ -2,12 +2,14 @@ package com.sage.hearts.client.screens;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.client.HeartsGame;
@@ -35,9 +37,9 @@ public class CreateGameScreen implements Screen, InputProcessor {
     private TextButton createGameButton;
 
     private FreeTypeFontGenerator fontGenerator;
-    private FreeTypeFontGenerator.FreeTypeFontParameter labelFontParameter;
-    private FreeTypeFontGenerator.FreeTypeFontParameter textFieldFontParameter;
-    private FreeTypeFontGenerator.FreeTypeFontParameter textButtonFontParameter;
+    private FreeTypeFontGenerator.FreeTypeFontParameter nameFieldFontParameter;
+    private FreeTypeFontGenerator.FreeTypeFontParameter errorLabelFontParameter;
+    private FreeTypeFontGenerator.FreeTypeFontParameter createGameButtonFontParameter;
 
     public CreateGameScreen(HeartsGame game) {
         this.game = game;
@@ -59,35 +61,32 @@ public class CreateGameScreen implements Screen, InputProcessor {
 
         fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenSans-Regular.ttf"));
 
-        labelFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        labelFontParameter.size = textSize;
-        labelFontParameter.incremental = true;
+        nameFieldFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        nameFieldFontParameter.size = textSize;
+        nameFieldFontParameter.incremental = true;
 
-        textFieldFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        textFieldFontParameter.size = textSize;
-        textFieldFontParameter.incremental = true;
+        errorLabelFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        errorLabelFontParameter.size = textSize;
+        errorLabelFontParameter.incremental = true;
 
-        textButtonFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        textButtonFontParameter.size = textSize;
-        textButtonFontParameter.incremental = true;
+        createGameButtonFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        createGameButtonFontParameter.size = textSize;
+        createGameButtonFontParameter.incremental = true;
     }
 
     private void uiSetup() {
-        var labelFont = fontGenerator.generateFont(labelFontParameter);
-        var textFieldFont = fontGenerator.generateFont(textFieldFontParameter);
-        var textButtonFont = fontGenerator.generateFont(textButtonFontParameter);
-
         Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
 
+        var textFieldStyle = skin.get(TextField.TextFieldStyle.class);
+        textFieldStyle.font = fontGenerator.generateFont(nameFieldFontParameter);
+        textFieldStyle.font.getData().markupEnabled = true;
+
         var labelStyle = skin.get(Label.LabelStyle.class);
-        labelStyle.font = labelFont;
+        labelStyle.font = fontGenerator.generateFont(errorLabelFontParameter);
         labelStyle.font.getData().markupEnabled = true;
 
-        var textFieldStyle = skin.get(TextField.TextFieldStyle.class);
-        textFieldStyle.font = textFieldFont;
-
         var textButtonStyle = skin.get(TextButton.TextButtonStyle.class);
-        textButtonStyle.font = textButtonFont;
+        textButtonStyle.font = fontGenerator.generateFont(createGameButtonFontParameter);
 
         // Creating UI elements:
         screenHeaderLabel = new Label("Create game", labelStyle);
@@ -111,14 +110,22 @@ public class CreateGameScreen implements Screen, InputProcessor {
         nameField.setMaxLength(Server.MAX_PLAYER_NAME_LENGTH);
         nameField.setDisabled(false);
 
-        portField = new TextField("", textFieldStyle);
+        portField = new TextField("", textFieldStyle) {
+            @Override
+            public void draw(Batch batch, float parentAlpha) {
+                var style = super.getStyle();
+                Color tempColor = style.fontColor;
+                style.fontColor = Color.ORANGE;
+                super.draw(batch, parentAlpha);
+                style.fontColor = tempColor;
+            }
+        };
         portField.setMessageText("Port");
         portField.setTextFieldFilter(new TextField.TextFieldFilter.DigitsOnlyFilter());
-        portField.setColor(Color.ORANGE);
         portField.setDisabled(false);
 
         errorLabel = new Label("", labelStyle);
-        errorLabel.setColor(new Color(1f, 0.2f, 0.2f, 1));
+        errorLabel.setAlignment(Align.center);
 
         createGameButton = new TextButton("Start game", textButtonStyle);
         createGameButton.addListener(new ChangeListener() {
@@ -128,32 +135,33 @@ public class CreateGameScreen implements Screen, InputProcessor {
                 int port;
 
                 if(name.length() == 0) {
-                    errorLabel.setText("Please enter a name");
+                    errorLabel.setText("[RED]Please enter a name");
                     return;
                 }
 
                 try {
                     port = Integer.parseInt(portField.getText());
                 } catch(NumberFormatException e) {
-                    errorLabel.setText("Error: Port must be an number");
+                    errorLabel.setText("[RED]Error: Port must be an number");
                     return;
                 }
 
                 if(port < 1 || port > 65535) {
-                    errorLabel.setText("Error: Port must be between 1 and 65535 inclusive");
+                    errorLabel.setText("[RED]Error: Port must be between 1 and 65535 inclusive");
                     return;
                 } else if(port == 1023) { // 1023 is a reserved port
-                    errorLabel.setText("Error: Port 1023 is a reserved port");
+                    errorLabel.setText("[RED]Error: Port 1023 is a reserved port");
                 }
 
-                game.startGameServer(port);
                 try {
+                    game.startGameServer(port);
                     game.joinGame("127.0.0.1", port, name);
-                } catch(Exception e) {
-                    errorLabel.setText("Error: Opened server but could not connect to 127.0.0.1:" + port + ". Closing server.");
+                } catch(GdxRuntimeException e) {
+                    errorLabel.setText("[RED]Error: " + e.getMessage() + "\nMaybe try a different port?");
                     game.closeGameServer();
                     return;
                 }
+                errorLabel.setText("");
                 game.showLobbyScreen();
             }
         });
@@ -169,16 +177,16 @@ public class CreateGameScreen implements Screen, InputProcessor {
         table.add(ipLabel).align(Align.center);
 
         table.row().padTop(viewport.getWorldHeight() / 35f).fillX();
-        table.add(nameField).maxWidth(viewport.getWorldWidth() * 0.3f);
+        table.add(nameField).maxWidth(viewport.getWorldWidth() * 0.3f).prefWidth(viewport.getWorldWidth() * 0.3f);
 
         table.row().padTop(viewport.getWorldHeight() / 120f).fillX();
-        table.add(portField).maxWidth(viewport.getWorldWidth() * 0.3f);
+        table.add(portField).maxWidth(viewport.getWorldWidth() * 0.3f).prefWidth(viewport.getWorldWidth() * 0.3f);
 
         table.row().padTop(viewport.getWorldHeight() / 120f).fillX();
-        table.add(errorLabel);
+        table.add(errorLabel).width(viewport.getWorldWidth() * 0.8f);
 
         table.row().padTop(viewport.getWorldHeight() * 0.05f).fillX();
-        table.add(createGameButton).maxWidth(viewport.getWorldWidth() * 0.3f);
+        table.add(createGameButton).maxWidth(viewport.getWorldWidth() * 0.3f).prefWidth(viewport.getWorldWidth() * 0.3f);
 
         stage = new Stage(viewport);
         stage.addActor(table);

@@ -44,7 +44,7 @@ public class HeartsGame extends Game {
                 count = (count + 1) % numHeartsInTitle;
                 StringBuilder title = new StringBuilder();
                 for(int i = 0; i < numHeartsInTitle; i++) {
-                    title.append(i == count ? "\uD83D\uDC94" : "❤️");
+                    title.append(i == count ? "\uD83D\uDC94" : "❤️"); // Unicode for broken heart emoji
                 }
                 Gdx.graphics.setTitle(title.toString());
             }
@@ -58,9 +58,9 @@ public class HeartsGame extends Game {
         lobbyScreen = new LobbyScreen(this);
         gameScreen = new GameScreen(this);
         playgroundScreen = new PlaygroundScreen(this);
-        System.out.println("before setScreen");
         setScreen(startScreen);
-        System.out.println("ok bye");
+
+        Runtime.getRuntime().addShutdownHook(new Thread(this::closeGameServer));
     }
 
     public void showStartScreen() {
@@ -92,7 +92,6 @@ public class HeartsGame extends Game {
     }
 
     public void joinGame(String serverIP, int port, String name) {
-        System.out.println("join gmae");
         clientConnection = new ClientConnection(serverIP, port, name, this);
         clientConnection.start();
         ClientPacket namePacket = new ClientPacket(ClientCode.NAME);
@@ -105,24 +104,21 @@ public class HeartsGame extends Game {
     }
 
     public void startGameServer(int port) {
-        if(server != null) {
-            server.close();
-            if(server.port != port) {
-                new Thread(() -> UPnP.closePortTCP(server.port)).start();
-            }
-        }
+        closeGameServer();
 
-        if(!UPnP.isMappedTCP(port)) {
+        this.server = new Server(port); // If server couldn't be started it will throw an exception
+        server.start();
+
+        if(!UPnP.isMappedTCP(port)) { // Only open port if starting server didn't throw an exception
             UPnP.openPortTCP(port); // TODO: Warning message or something if UPnP fails
         }
-
-        this.server = new Server(port);
-        server.start();
     }
 
     public void closeGameServer() {
         if(server != null) {
+            new Thread(() -> UPnP.closePortTCP(server.port)).start();
             server.close();
+            server = null;
         }
     }
 

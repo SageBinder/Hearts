@@ -51,15 +51,14 @@ public class ClientConnection extends Thread {
             try {
                 int packetSize = input.readInt();
                 packet = ServerPacket.fromBytes(input.readNBytes(packetSize));
+                packetQueue.add(packet);
             } catch(IOException e) {
                 quit();
                 packetQueue.add(new LostConnectionToServerQueueItem());
                 break;
             } catch(SerializationException | IllegalArgumentException | OutOfMemoryError e) {
                 e.printStackTrace();
-                continue;
             }
-            packetQueue.add(packet);
         }
     }
 
@@ -81,7 +80,7 @@ public class ClientConnection extends Thread {
             if(item instanceof LostConnectionToServerQueueItem) {
                 throw new LostConnectionToServerException();
             } else {
-                return Optional.ofNullable(packetQueue.poll());
+                return Optional.ofNullable(item);
             }
         }
     }
