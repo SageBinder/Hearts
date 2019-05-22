@@ -118,6 +118,7 @@ public class JoinGameScreen implements Screen, InputProcessor {
         portField.setDisabled(false);
 
         errorLabel = new Label("", labelStyle);
+        errorLabel.setAlignment(Align.center);
 
         joinGameButton = new TextButton("Join game", textButtonStyle);
         joinGameButton.addListener(new ChangeListener() {

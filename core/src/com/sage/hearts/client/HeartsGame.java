@@ -109,7 +109,7 @@ public class HeartsGame extends Game {
         this.server = new Server(port); // If server couldn't be started it will throw an exception
         server.start();
 
-        if(!UPnP.isMappedTCP(port)) { // Only open port if starting server didn't throw an exception
+        if(!UPnP.isMappedTCP(port)) { // Port only opens if starting the server didn't throw an exception
             UPnP.openPortTCP(port); // TODO: Warning message or something if UPnP fails
         }
     }

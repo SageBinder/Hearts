@@ -182,7 +182,7 @@ public class PlaygroundScreen implements Screen, InputProcessor {
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         var worldPos = viewport.unproject(new Vector2(screenX, screenY));
         if(button == Input.Buttons.LEFT) {
-            test.entity().mover.setTargetXY(worldPos.x - (test.getWidth() / 2f), worldPos.y - (test.getHeight() / 2f));
+            test.entity().mover.setTargetPos(worldPos.x - (test.getWidth() / 2f), worldPos.y - (test.getHeight() / 2f));
         }
         return false;
     }

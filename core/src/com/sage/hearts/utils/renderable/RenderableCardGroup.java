@@ -82,6 +82,14 @@ public class RenderableCardGroup<T extends Card & RenderableCard> extends Render
         }
     }
 
+    public void debug() {
+        inDebugMode = true;
+    }
+
+    public void setDebug(boolean debug) {
+        this.inDebugMode = debug;
+    }
+
     private void renderDebugLines(Viewport viewport) {
         debugRenderer.setProjectionMatrix(viewport.getCamera().combined);
         debugRenderer.begin(ShapeRenderer.ShapeType.Line);

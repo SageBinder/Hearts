@@ -7,6 +7,7 @@ import com.sage.hearts.client.HeartsGame;
 public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
+		config.samples = 16;
 		new LwjglApplication(new HeartsGame(), config);
 	}
 }

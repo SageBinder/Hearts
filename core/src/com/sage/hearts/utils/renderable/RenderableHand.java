@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.utils.card.Card;
+import com.sage.hearts.utils.card.Rank;
+import com.sage.hearts.utils.card.Suit;
 
 import java.util.Collection;
 
@@ -39,5 +41,38 @@ public class RenderableHand<T extends Card & RenderableCard> extends RenderableC
         super.pos.y = viewport.getWorldHeight() * bottomPaddingProportion;
 
         super.render(batch, viewport, renderBase);
+    }
+
+    @Override
+    public void add(Rank rank, Suit suit, CardSupplier<T> supplier) {
+        super.add(rank, suit, supplier);
+        sort(Card::compareTo);
+    }
+
+    @Override
+    public boolean add(T t) {
+        boolean ret = super.add(t);
+        sort(Card::compareTo);
+        return ret;
+    }
+
+    @Override
+    public void add(int index, T element) {
+        super.add(index, element);
+        sort(Card::compareTo);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends T> c) {
+        boolean ret = super.addAll(c);
+        sort(Card::compareTo);
+        return ret;
+    }
+
+    @Override
+    public boolean addAll(int index, Collection<? extends T> c) {
+        boolean ret = super.addAll(index, c);
+        sort(Card::compareTo);
+        return ret;
     }
 }

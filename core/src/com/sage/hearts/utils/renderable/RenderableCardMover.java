@@ -85,7 +85,7 @@ public abstract class RenderableCardMover {
         return this;
     }
 
-    public RenderableCardMover setTargetXY(float x, float y) {
+    public RenderableCardMover setTargetPos(float x, float y) {
         setTargetX(x);
         setTargetY(y);
         return this;

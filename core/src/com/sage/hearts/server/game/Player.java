@@ -9,13 +9,11 @@ import com.sage.hearts.server.network.ServerPacket;
 import com.sage.hearts.utils.card.CardList;
 import com.sage.hearts.utils.hearts.HeartsCard;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
+import java.io.*;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -36,27 +34,31 @@ public class Player {
     private final BlockingQueue<ClientPacket> packetQueue = new LinkedBlockingQueue<>();
 
     private final Thread packetQueueFillerThread;
-    private Map<ClientCode, PacketHandler> initialPacketHandlers = new HashMap<>();
+    private final Map<ClientCode, PacketHandler> initialPacketHandlers = new ConcurrentHashMap<>();
 
     public Player(int playerNum, Socket socket) {
         this.socket = socket;
         this.playerNum = playerNum;
         this.name = "Player " + playerNum;
 
-        output = new DataOutputStream(socket.getOutputStream());
-        input = new DataInputStream(socket.getInputStream());
+        output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+        input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 
         packetQueueFillerThread = new Thread(() -> {
             while(socketIsConnected()) {
                 try {
                     int packetSize = input.readInt();
                     ClientPacket packet = ClientPacket.fromBytes(input.readNBytes(packetSize));
+                    System.out.println("packetQueueFillerThread received packet " + packet.networkCode + " from " + name);
                     if(initialPacketHandler(packet)) {
                         try {
+                            System.out.println("Adding packet to queue");
                             packetQueue.add(packet);
                         } catch(Exception e) {
                             e.printStackTrace();
                         }
+                    } else {
+                        System.out.println("Not adding packet to queue");
                     }
                 } catch(IOException e) {
                     dropConnection();
@@ -70,7 +72,7 @@ public class Player {
         packetQueueFillerThread.start();
     }
 
-    private synchronized boolean initialPacketHandler(final ClientPacket packet) {
+    private boolean initialPacketHandler(final ClientPacket packet) {
         if(packet.networkCode != null) {
             PacketHandler handler = initialPacketHandlers.get(packet.networkCode);
             if(handler != null) {
@@ -81,15 +83,15 @@ public class Player {
     }
 
     // PacketHandler code will be run by packetQueueFillerThread
-    public synchronized void setInitialPacketHandlerForCode(ClientCode code, PacketHandler handler) {
+    public void setInitialPacketHandlerForCode(ClientCode code, PacketHandler handler) {
         initialPacketHandlers.put(code, handler);
     }
 
-    public synchronized void resetInitialPacketHandlers() {
+    public void resetInitialPacketHandlers() {
         initialPacketHandlers.clear();
     }
 
-    public synchronized void resetForNewRound() {
+    public void resetForNewRound() {
         hand.clear();
         collectedPointCards.clear();
     }
@@ -119,13 +121,14 @@ public class Player {
     }
 
     public synchronized ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
+        System.out.println("Waiting for packet from " + name);
         ClientPacket ret = packetQueue.take();
         if(ret instanceof PlayerDisconnectedItem) {
             throw new PlayerDisconnectedException(this);
         } else if(ret instanceof InterruptItem) {
             throw new InterruptedException();
         } else {
-            return packetQueue.take();
+            return ret;
         }
     }
 
@@ -140,74 +143,74 @@ public class Player {
             } else if(ret instanceof InterruptItem) {
                 throw new InterruptedException();
             } else {
-                return Optional.ofNullable(packetQueue.poll(timeout, unit));
+                return Optional.ofNullable(ret);
             }
         }
     }
 
-    public synchronized int getPlayerNum() {
+    public int getPlayerNum() {
         return playerNum;
     }
 
-    public synchronized void setPlayerNum(int playerNum) {
+    public void setPlayerNum(int playerNum) {
         this.playerNum = playerNum;
     }
 
-    public synchronized String getName() {
+    public String getName() {
         return name;
     }
 
-    public synchronized void setName(String name) {
+    public void setName(String name) {
         this.name = name;
     }
 
-    public synchronized boolean isHost() {
+    public boolean isHost() {
         return isHost;
     }
 
-    public synchronized void setHost(boolean host) {
+    public void setHost(boolean host) {
         this.isHost = host;
     }
 
-    public synchronized boolean socketIsConnected() {
+    public boolean socketIsConnected() {
         return socket.isConnected();
     }
 
-    public synchronized void ping() throws SerializationException, PlayerDisconnectedException {
+    public void ping() throws SerializationException, PlayerDisconnectedException {
         sendPacket(ServerPacket.pingPacket());
     }
 
-    public synchronized int getAccumulatedPoints() {
+    public int getAccumulatedPoints() {
         return accumulatedPoints + pointsOffset;
     }
 
-    public synchronized int getAccumulatedPointsNoOffset() {
+    public int getAccumulatedPointsNoOffset() {
         return accumulatedPoints;
     }
 
-    public synchronized void setAccumulatedPoints(int accumulatedPoints) {
+    public void setAccumulatedPoints(int accumulatedPoints) {
         this.accumulatedPoints = accumulatedPoints;
     }
 
-    public synchronized int getPointsOffset() {
+    public int getPointsOffset() {
         return pointsOffset;
     }
 
-    public synchronized void setPointsOffset(int pointsOffset) {
+    public void setPointsOffset(int pointsOffset) {
         this.pointsOffset = pointsOffset;
     }
 
-    public synchronized void incrementPointsOffset(int inc) {
+    public void incrementPointsOffset(int inc) {
         pointsOffset += inc;
     }
 
-    public synchronized void interruptPacketWaiting() {
+    public void interruptPacketWaiting() {
         packetQueue.add(new InterruptItem());
     }
 
-    public synchronized void dropConnection() {
-        socket.dispose();
+    public void dropConnection() {
         packetQueue.add(new PlayerDisconnectedItem());
+        socket.dispose();
     }
 
     private abstract class PoisonQueueItem extends ClientPacket {

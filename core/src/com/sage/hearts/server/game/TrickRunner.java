@@ -57,16 +57,8 @@ public class TrickRunner {
     }
 
     private static Player getNextPlayer(GameState gameState, final Player prev) {
-        int nextPlayerIdx = 0;
-        for(int i = 0; i < gameState.players.size(); i++) {
-            if(gameState.players.get(i) == prev) {
-                if(i + 1 != gameState.players.size()) {
-                    nextPlayerIdx = i;
-                }
-                break;
-            }
-        }
-        return gameState.players.get(nextPlayerIdx % gameState.players.size());
+        int nextIdx = gameState.players.indexOf(prev) + 1;
+        return (nextIdx == gameState.players.size()) ? gameState.players.get(0) : gameState.players.get(nextIdx);
     }
 
     private static void sendLeadingPlayer(GameState gameState) {
@@ -97,8 +89,8 @@ public class TrickRunner {
         if(gameState.basePlay == null) {
             gameState.basePlay = gameState.turnPlayer.play;
             gameState.leadingPlayer = gameState.turnPlayer;
-        } else if(gameState.turnPlayer.play.getSuit() == gameState.basePlay.getSuit()
-                && gameState.turnPlayer.play.getRank().rankNum > gameState.basePlay.getRank().rankNum) {
+        } else if(gameState.turnPlayer.play.getSuit() == gameState.leadingPlayer.play.getSuit()
+                && gameState.turnPlayer.play.getRank().rankNum > gameState.leadingPlayer.play.getRank().rankNum) {
             gameState.leadingPlayer = gameState.turnPlayer;
         }
     }

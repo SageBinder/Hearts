@@ -13,7 +13,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RoundRunner {
     public static void playRound(GameState gameState)
@@ -26,24 +25,26 @@ public class RoundRunner {
         gameState.players.sendPacketToAll(roundStartPacket);
 
         Deck deck = new Deck(false);
+        deck.shuffle();
         deck.dealToPlayers(gameState.players);
 
         sendHands(gameState);
         tradeWarheads(gameState);
 
-        Stream<Player> playerStream = gameState.players.stream();
         do {
             TrickRunner.playTrick(gameState);
-        } while(playerStream.allMatch(p -> p.hand.size() > 0));
+        } while(gameState.players.stream().allMatch(p -> p.hand.size() > 0));
 
         // If only one player has points, they've shot the moon. If a player shoots the moon, add 26 points to the
         // accumulatedPoints of all other players.
-        Stream<Player> playersWithPointsStream = gameState.players.stream().filter(p -> !p.collectedPointCards.isEmpty());
-        if(playersWithPointsStream.count() == 1 && playersWithPointsStream.findFirst().isPresent()) {
-            Player shotTheMoon = playersWithPointsStream.findFirst().get();
+        PlayerList playersWithPoints = gameState.players.stream()
+                .filter(p -> !p.collectedPointCards.isEmpty())
+                .collect(Collectors.toCollection(PlayerList::new));
+        if(playersWithPoints.size() == 1) {
+            Player shotTheMoon = playersWithPoints.get(0);
             gameState.players.stream().filter(p -> p != shotTheMoon).forEach(p -> p.accumulatedPoints += 26);
         } else { // If no one shot the moon, add each player's collectedPointCards point sum to their accumulatedPoints
-            playersWithPointsStream.forEach(p ->
+            playersWithPoints.forEach(p ->
                     p.accumulatedPoints += p.collectedPointCards.stream().mapToInt(HeartsCard::getPoints).sum());
         }
 
@@ -98,10 +99,14 @@ public class RoundRunner {
         for(int i = 0, size = gameState.players.size(); i < size; i++) {
             Player p = gameState.players.get(i);
             warheadThreads[i] = new Thread(() -> {
+                System.out.println("Thread start for player " + p.getName());
                 while(true) {
                     try {
+                        System.out.println("About to wait for packet from player " + p.getName());
                         ClientPacket warheadPacket = p.waitForPacket();
+                        System.out.println("Received a packet from " + p.getName());
                         if(warheadPacket.networkCode != ClientCode.WARHEADS) {
+                            System.out.println("Didn't receive warhead packet from " + p.getName());
                             continue;
                         }
                         CardList<HeartsCard> warheads =
@@ -110,16 +115,19 @@ public class RoundRunner {
                                         .collect(Collectors.toCollection(CardList::new));
                         if(gameState.areValidWarheads(p, warheads)) {
                             p.sendPacket(new ServerPacket(ServerCode.SUCCESSFUL_WARHEADS));
+                            System.out.println("Received successful warheads from " + p.getName());
                             synchronized(allWarheads) {
                                 allWarheads.put(p, warheads);
                             }
                             numFinishedThreads.incrementAndGet();
                             synchronized(waitObject) {
+                                System.out.println("Notifying waitObject...");
                                 waitObject.notify();
                             }
                             return;
                         } else {
                             p.sendPacket(new ServerPacket(ServerCode.INVALID_WARHEADS));
+                            System.out.println("Received invalid warheads from " + p.getName());
                         }
                     } catch(InterruptedException e) {
                         if(playerDisconnected.get()) {
@@ -127,6 +135,7 @@ public class RoundRunner {
                             synchronized(waitObject) {
                                 waitObject.notify();
                             }
+                            System.out.println("Caught InterruptedException from " + p.getName());
                             return;
                         }
                     } catch(PlayerDisconnectedException e) {
@@ -135,9 +144,12 @@ public class RoundRunner {
                         synchronized(waitObject) {
                             waitObject.notify();
                         }
+                        System.out.println("Caught PlayerDisconnectedException from " + p.getName());
                         return;
                     } catch(NullPointerException | ClassCastException e) {
                         p.sendPacket(new ServerPacket(ServerCode.INVALID_WARHEADS));
+                        System.out.println("Caught exception, received invalid warheads from " + p.getName());
+
                     }
                 }
             });
@@ -150,13 +162,17 @@ public class RoundRunner {
         while(numFinishedThreads.intValue() < warheadThreads.length) {
             synchronized(waitObject) {
                 try {
+                    System.out.println("Main thread, waiting...");
                     waitObject.wait();
                 } catch(InterruptedException e) {
                     e.printStackTrace();
                 }
+                System.out.println("Main thread, checking condition numFinishedThreads.intValue() < warheadThreads.length which is "
+                        + (numFinishedThreads.intValue() < warheadThreads.length));
             }
             if(playerDisconnected.get() && !alreadyInterrupted) {
                 gameState.players.forEach(Player::interruptPacketWaiting);
+                System.out.println("INTERRUPTED");
                 alreadyInterrupted = true;
             }
         }

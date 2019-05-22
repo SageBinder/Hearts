@@ -3,6 +3,7 @@ package com.sage.hearts.client.game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.sage.hearts.client.HeartsGame;
+import com.sage.hearts.client.network.ClientCode;
 import com.sage.hearts.client.network.ClientConnection;
 import com.sage.hearts.client.network.ClientPacket;
 import com.sage.hearts.client.network.LostConnectionToServerException;
@@ -54,21 +55,22 @@ public class GameState {
             return false;
         }
 
-        boolean didUpdate = false;
-        Optional<ServerPacket> p;
+        // It's important to only update at most a single packet. If more than one packet is updated and
+        // some packet changes the screen, it won't give the new screen a chance to update with the latest packet.
+        // The new screen won't have any idea what state it should be in. Updating from gameState in show()
+        // doesn't work because gameState may change after show() is called.
+        // POSSIBLE SOLUTION: New screen should update from gameState on its first render.
         try {
-            while((p = client.getPacket()).isPresent()) {
-                applyUpdate(p.get());
-                didUpdate = true;
-            }
+            Optional<ServerPacket> p = client.getPacket();
+            return (p.isPresent()) && applyUpdate(p.get());
         } catch(LostConnectionToServerException e) {
             updater.lostConnectionToServer();
+            return true;
         }
-        return didUpdate;
     }
 
-    private void applyUpdate(ServerPacket updatePacket) {
-        updater.update(updatePacket.networkCode, updatePacket.data);
+    private boolean applyUpdate(ServerPacket updatePacket) {
+        return updater.update(updatePacket.networkCode, updatePacket.data);
     }
 
     private Optional<RenderablePlayer> getPlayerByPlayerNum(Integer playerNum) {
@@ -79,8 +81,10 @@ public class GameState {
 
     private class Updater {
         private Map<Serializable, Serializable> data = null;
-        private void update(ServerCode serverCode, Map<Serializable, Serializable> data) {
-            lastServerCode = serverCode;
+        private boolean update(ServerCode serverCode, Map<Serializable, Serializable> data) {
+            if(serverCode != ServerCode.PING) {
+                lastServerCode = serverCode;
+            }
             this.data = data;
             try {
                 switch(lastServerCode) {
@@ -147,6 +151,7 @@ public class GameState {
                 message = e.getClass() + ": " + e.getMessage();
                 // TODO: When encountering an error here, request the full game state from the server
             }
+            return serverCode != ServerCode.PING; // PING does not constitute and update as of now
         }
 
         // --- GENERAL CODES ---
@@ -421,7 +426,7 @@ public class GameState {
                     .filter(RenderableHeartsCard::isSelected)
                     .collect(Collectors.toCollection(RenderableCardList::new));
             if(selectedCards.size() == 3) {
-                ClientPacket packet = new ClientPacket();
+                ClientPacket packet = new ClientPacket(ClientCode.WARHEADS);
                 packet.data.put("warheads", selectedCards.toCardNumList());
                 try {
                     client.sendPacket(packet);
@@ -455,7 +460,7 @@ public class GameState {
                     .collect(Collectors.toCollection(RenderableCardList::new));
             if(selectedCards.size() == 1) {
                 RenderableHeartsCard card = selectedCards.get(0);
-                ClientPacket packet = new ClientPacket();
+                ClientPacket packet = new ClientPacket(ClientCode.PLAY);
                 packet.data.put("play", card.getCardNum());
                 try {
                     client.sendPacket(packet);

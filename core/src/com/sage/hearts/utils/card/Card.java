@@ -5,7 +5,7 @@ import com.sage.hearts.utils.renderable.RenderableCard;
 import java.util.Random;
 
 @SuppressWarnings("WeakerAccess")
-public class Card {
+public class Card implements Comparable<Card> {
     private static Random r = new Random();
 
     private Rank rank;
@@ -127,5 +127,10 @@ public class Card {
     public String toString() {
         return (isJoker()) ? rank.stringName.replace("_", " ")
                 : rank.stringName + " of " + suit.stringName;
+    }
+
+    @Override
+    public int compareTo(Card o) {
+        return 0;
     }
 }

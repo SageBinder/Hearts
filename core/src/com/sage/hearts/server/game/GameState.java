@@ -43,21 +43,36 @@ public class GameState {
         basePlay = null;
     }
 
-    public void setPlayers(PlayerList players) {
-        this.players.clear();
-        this.players.addAll(players);
-    }
-
     public void cycleWarheadMap() {
-        // TODO Cycle warhead map
+        if(warheadMap.isEmpty()) {
+            warheadMap.put(0, 1);
+            warheadMap.put(1, 2);
+            warheadMap.put(2, 3);
+            warheadMap.put(3, 0);
+        } else {
+            int size = warheadMap.keySet().size();
+            for(int i = 0; i < size - 1; i++) {
+                warheadMap.put(i, warheadMap.put(i + 1, warheadMap.get(i)));
+            }
+            if(warheadMap.get(0) == 0) {
+                cycleWarheadMap();
+            }
+        }
     }
 
-    // TODO: This isn't correct
     public boolean isValidPlay(Player p, HeartsCard play) {
-        if(play == null || !p.hand.contains(play.getRank(), play.getSuit())) {
+        if(play == null || p == null || !p.hand.contains(play.getRank(), play.getSuit())) {
             return false;
-        } else {
+        } else if(basePlay == null) {
             return play.getSuit() != Suit.HEARTS || heartsBroke;
+        } else if(play.getSuit() != basePlay.getSuit()) {
+            boolean isValid = !p.hand.containsAnySuit(basePlay.getSuit());
+            if(isValid && play.getSuit() == Suit.HEARTS) {
+                heartsBroke = true;
+            }
+            return isValid;
+        } else {
+            return true;
         }
     }
 

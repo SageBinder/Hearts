@@ -8,9 +8,7 @@ import com.badlogic.gdx.utils.SerializationException;
 import com.sage.hearts.client.HeartsGame;
 import com.sage.hearts.server.network.ServerPacket;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -38,8 +36,8 @@ public class ClientConnection extends Thread {
         SocketHints socketHints = new SocketHints();
         socketHints.socketTimeout = 0;
         socket = new NetJavaSocketImpl(Net.Protocol.TCP, serverIP, port, socketHints);
-        output = new DataOutputStream(socket.getOutputStream());
-        input = new DataInputStream(socket.getInputStream());
+        output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+        input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 
         Runtime.getRuntime().addShutdownHook(new Thread(socket::dispose));
     }

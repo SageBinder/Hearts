@@ -5,7 +5,7 @@ import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 
-public class HeartsCard extends Card implements Comparable<HeartsCard> {
+public class HeartsCard extends Card {
     private int points;
 
     public HeartsCard(Rank rank, Suit suit) throws InvalidCardException {
@@ -44,7 +44,7 @@ public class HeartsCard extends Card implements Comparable<HeartsCard> {
     }
 
     @Override
-    public int compareTo(HeartsCard o) {
+    public int compareTo(Card o) {
         if(this.getSuit() == o.getSuit()) {
             return Integer.compare(this.getRank().rankNum, o.getRank().rankNum);
         } else {
