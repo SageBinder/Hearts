@@ -16,7 +16,7 @@ import com.sage.hearts.utils.renderable.RenderableCardGroup;
 import java.util.Optional;
 
 public class RenderablePlayer implements Renderable {
-    private static BitmapFont nameFont = new BitmapFont();
+    private static BitmapFont nameFont;
     private static FreeTypeFontGenerator fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenSans-Regular.ttf"));
     static {
         var fontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();

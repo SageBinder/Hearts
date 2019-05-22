@@ -19,9 +19,7 @@ import com.sage.hearts.client.game.GameState;
 import com.sage.hearts.client.game.RenderablePlayer;
 import com.sage.hearts.client.network.ClientConnection;
 import com.sage.hearts.server.network.ServerCode;
-
-import java.util.Arrays;
-import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class GameScreen implements Screen, InputProcessor {
     private HeartsGame game;
@@ -94,7 +92,7 @@ public class GameScreen implements Screen, InputProcessor {
         // Organizing UI elements into table:
         uiTable = new Table();
         uiTable.debug();
-        uiTable.setFillParent(true);
+        uiTable.setFillParent(false);
 
         uiTable.row().padBottom(viewport.getWorldHeight() / 120f);
         uiTable.add(actionButton);
@@ -162,8 +160,13 @@ public class GameScreen implements Screen, InputProcessor {
 
         float playersCenterX = viewport.getWorldWidth() * 0.5f;
         float playersCenterY = viewport.getWorldHeight() * 0.66f;
-        uiTable.setPosition(playersCenterX - (uiTable.getWidth() * 0.5f),
-                playersCenterY - (uiTable.getHeight() * 0.5f));
+        var topPlayerIdx = (ArrayUtils.indexOf(gameState.players, gameState.thisPlayer) + (gameState.players.length / 2)) % gameState.players.length;
+        var topPlayer = gameState.players[Math.max(topPlayerIdx, 0)];
+        float uiTableX = playersCenterX - (uiTable.getWidth() * 0.5f);
+        float uiTableY = topPlayer != null
+                ? topPlayer.collectedPointCards.pos.y - uiTable.getHeight()
+                : playersCenterY - (uiTable.getHeight() * 0.5f);
+        uiTable.setPosition(uiTableX, uiTableY);
         uiStage.act(delta);
         updateCards(delta);
 
@@ -182,12 +185,12 @@ public class GameScreen implements Screen, InputProcessor {
     }
 
     private void renderPlayers(float centerX, float centerY, float widthRadius, float heightRadius) {
-        List<RenderablePlayer> players = Arrays.asList(gameState.players);
-        float angleIncrement = MathUtils.PI2 / players.size();
-        float shift = (players.indexOf(gameState.thisPlayer) * angleIncrement) + (MathUtils.PI * 0.5f);
+        var players = gameState.players;
+        float angleIncrement = MathUtils.PI2 / players.length;
+        float shift = (ArrayUtils.indexOf(players, gameState.thisPlayer) * angleIncrement) + (MathUtils.PI * 0.5f);
 
-        for(int i = 0; i < players.size(); i++) {
-            RenderablePlayer toRender = players.get(i);
+        for(int i = 0; i < players.length; i++) {
+            RenderablePlayer toRender = players[i];
             if(toRender == null) {
                 continue;
             }

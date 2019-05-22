@@ -294,6 +294,7 @@ public class GameState {
 
             newPlayPlayer.clearPlay(); // newPlayPlayer.play should already be null but clear just in case
             newPlayPlayer.setPlay(newPlay);
+            heartsBroke |= newPlay.getSuit() == Suit.HEARTS;
         }
 
         private void waitForLeadingPlayer() {
