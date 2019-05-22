@@ -342,6 +342,8 @@ public class GameState {
             warheadMap.clear();
             warheadMap.putAll((HashMap<Integer, Integer>)data.get("warheadmap"));
 
+            lastWarheads.clear();
+
             int[] playerOrder = (int[])data.get("playerorder");
             RenderablePlayer[] newPlayerArr = new RenderablePlayer[players.length];
             for(int i = 0; i < newPlayerArr.length; i++) {
@@ -387,6 +389,7 @@ public class GameState {
         }
 
         private void successfulWarheads() {
+            lastWarheads.clear();
             message = "Warheads successfully sent to "
                     + getPlayerByPlayerNum(warheadMap.get(thisPlayer.getPlayerNum()))
                     .orElseThrow(() -> new InvalidServerPacketException(

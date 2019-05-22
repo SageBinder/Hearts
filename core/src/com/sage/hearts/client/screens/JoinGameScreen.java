@@ -12,10 +12,12 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.client.HeartsGame;
+import com.sage.hearts.client.game.GameState;
 import com.sage.hearts.server.Server;
 
 public class JoinGameScreen implements Screen, InputProcessor {
     private HeartsGame game;
+    private GameState gameState;
 
     private Viewport viewport;
     private float viewportScale = 5f;
@@ -37,6 +39,7 @@ public class JoinGameScreen implements Screen, InputProcessor {
 
     public JoinGameScreen(HeartsGame game) {
         this.game = game;
+        this.gameState = game.getGameState();
 
         viewportSetup();
         fontSetup();
@@ -159,6 +162,7 @@ public class JoinGameScreen implements Screen, InputProcessor {
                     return;
                 }
                 errorLabel.setText("");
+                gameState.message = "Connecting...";
                 game.showLobbyScreen();
             }
         });

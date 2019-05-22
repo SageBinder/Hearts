@@ -19,10 +19,15 @@ public class RoundRunner {
             throws PlayerDisconnectedException, MultiplePlayersDisconnectedException {
         gameState.resetForNewRound();
 
+        gameState.players.sendPlayersToAll();
         ServerPacket roundStartPacket = new ServerPacket(ServerCode.ROUND_START);
         roundStartPacket.data.put("warheadmap", gameState.warheadMap);
         roundStartPacket.data.put("playerorder", gameState.players.stream().mapToInt(Player::getPlayerNum).toArray());
         gameState.players.sendPacketToAll(roundStartPacket);
+
+        for(Player p : gameState.players) {
+            System.out.println(p.getPlayerNum() + ": " + p.getName());
+        }
 
         Deck deck = new Deck(false);
         deck.shuffle();

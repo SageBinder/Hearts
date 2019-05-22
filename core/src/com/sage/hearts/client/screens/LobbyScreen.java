@@ -186,7 +186,6 @@ public class LobbyScreen implements Screen, InputProcessor {
                 }
             }).start();
         }
-        gameState.message = "Connecting...";
         messageLabel.setText("");
         quitConfirmationFlag = false;
         quitConfirmationTimer.clear();

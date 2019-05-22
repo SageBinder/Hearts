@@ -143,46 +143,55 @@ public class Server extends Thread {
         });
 
         player.setInitialPacketHandlerForCode(ClientCode.PLAYER_POINTS_CHANGE, packet -> {
-            if(gameState.lock.tryLock()) {
-                if(packet.data.get("player") instanceof Integer
-                        && packet.data.get("pointschange") instanceof Integer
-                        && player == host) {
-                    gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
-                        p.incrementPointsOffset((Integer)packet.data.get("pointschange"));
-                        ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
-                        newPlayerPointsPacket.data.put("player", p.getPlayerNum());
-                        newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
-                        sendPacketToAllAndHandleDisconnections(newPlayerPointsPacket);
-                    });
+            try {
+                if(gameState.lock.tryLock(1, TimeUnit.SECONDS)) {
+                    if(packet.data.get("player") instanceof Integer
+                            && packet.data.get("pointschange") instanceof Integer
+                            && player == host) {
+                        gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
+                            p.incrementPointsOffset((Integer)packet.data.get("pointschange"));
+                            ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
+                            newPlayerPointsPacket.data.put("player", p.getPlayerNum());
+                            newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
+                            sendPacketToAllAndHandleDisconnections(newPlayerPointsPacket);
+                        });
+                    }
+                    gameState.lock.unlock();
                 }
-                gameState.lock.unlock();
+            } catch(InterruptedException ignored) {
             }
             return false;
         });
 
         player.setInitialPacketHandlerForCode(ClientCode.RESET_PLAYER_POINTS, packet -> {
-            if(gameState.lock.tryLock()) {
-                if(packet.data.get("player") instanceof Integer && player == host) {
-                    gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
-                        p.setPointsOffset(0);
-                        ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
-                        newPlayerPointsPacket.data.put("player", p.getPlayerNum());
-                        newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
-                        sendPacketToAllAndHandleDisconnections(newPlayerPointsPacket);
-                    });
+            try {
+                if(gameState.lock.tryLock(1, TimeUnit.SECONDS)) {
+                    if(packet.data.get("player") instanceof Integer && player == host) {
+                        gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
+                            p.setPointsOffset(0);
+                            ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
+                            newPlayerPointsPacket.data.put("player", p.getPlayerNum());
+                            newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
+                            sendPacketToAllAndHandleDisconnections(newPlayerPointsPacket);
+                        });
+                    }
+                    gameState.lock.unlock();
                 }
-                gameState.lock.unlock();
+            } catch(InterruptedException ignored) {
             }
             return false;
         });
 
         player.setInitialPacketHandlerForCode(ClientCode.SHUFFLE_PLAYERS, packet -> {
-            if(gameState.lock.tryLock()) {
-                if(player == host) {
-                    Collections.shuffle(gameState.players);
-                    sendPlayersToAllUntilNoDisconnections();
+            try {
+                if(gameState.lock.tryLock(1, TimeUnit.SECONDS)) {
+                    if(player == host) {
+                        Collections.shuffle(gameState.players);
+                        sendPlayersToAllUntilNoDisconnections();
+                    }
+                    gameState.lock.unlock();
                 }
-                gameState.lock.unlock();
+            } catch(InterruptedException ignored) {
             }
             return false;
         });

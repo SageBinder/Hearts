@@ -93,6 +93,7 @@ public class GameScreen implements Screen, InputProcessor {
 
         // Organizing UI elements into table:
         uiTable = new Table();
+        uiTable.debug();
         uiTable.setFillParent(true);
 
         uiTable.row().padBottom(viewport.getWorldHeight() / 120f);
@@ -170,8 +171,10 @@ public class GameScreen implements Screen, InputProcessor {
         HeartsGame.clearScreen();
 
         batch.begin();
-        renderPlayers(playersCenterX, playersCenterY,
-                viewport.getWorldWidth() * 0.35f,viewport.getWorldHeight() * 0.22f);
+        if(gameState.lastServerCode != ServerCode.ROUND_END) {
+            renderPlayers(playersCenterX, playersCenterY,
+                    viewport.getWorldWidth() * 0.35f,viewport.getWorldHeight() * 0.22f);
+        }
         gameState.thisPlayerHand.render(batch, viewport);
         batch.end();
 
@@ -181,7 +184,7 @@ public class GameScreen implements Screen, InputProcessor {
     private void renderPlayers(float centerX, float centerY, float widthRadius, float heightRadius) {
         List<RenderablePlayer> players = Arrays.asList(gameState.players);
         float angleIncrement = MathUtils.PI2 / players.size();
-        float shift = (players.indexOf(gameState.thisPlayer) * (MathUtils.PI2 / players.size())) + (MathUtils.PI * 0.5f);
+        float shift = (players.indexOf(gameState.thisPlayer) * angleIncrement) + (MathUtils.PI * 0.5f);
 
         for(int i = 0; i < players.size(); i++) {
             RenderablePlayer toRender = players.get(i);

@@ -41,7 +41,7 @@ public class RenderablePlayer implements Renderable {
 
     public RenderablePlayer(int playerNum, String name) {
         this.playerNum = playerNum;
-        this.name = name;
+        this.name = playerNum + ": " + name;
     }
 
     @Override
@@ -51,12 +51,12 @@ public class RenderablePlayer implements Renderable {
                 0, Align.center, false);
 
         float playTargetHeight = viewport.getWorldHeight() * 0.11f;
+        float playTargetY = pos.y - playTargetHeight;
         if(isExpanded) {
             playTargetHeight *= 2;
         }
         float playTargetWidth = playTargetHeight * RenderableCardEntity.WIDTH_TO_HEIGHT_RATIO;
         float playTargetX = pos.x - (playTargetWidth * 0.5f);
-        float playTargetY = pos.y - playTargetHeight;
 
         if(play != null) {
             play.entity.mover.sizeSpeed = 8;
