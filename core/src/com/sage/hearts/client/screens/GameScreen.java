@@ -246,6 +246,11 @@ public class GameScreen implements Screen, InputProcessor {
             actionButton.setText("Exit to lobby");
             break;
 
+        case PLAY_TWO_OF_CLUBS:
+            disableButton(actionButton);
+            actionButton.setText("");
+            updateDelay = 1;
+
         case SUCCESSFUL_PLAY:
         case SUCCESSFUL_WARHEADS:
         case TRICK_START:
@@ -255,7 +260,6 @@ public class GameScreen implements Screen, InputProcessor {
         case WAIT_FOR_TURN_PLAYER:
         case WAIT_FOR_HAND:
         case WAIT_FOR_NEW_PLAY:
-        case PLAY_TWO_OF_CLUBS:
             disableButton(actionButton);
             actionButton.setText("");
         default:

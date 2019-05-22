@@ -1,5 +1,6 @@
 package com.sage.hearts.server.game;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.net.Socket;
 import com.badlogic.gdx.utils.SerializationException;
 import com.sage.hearts.client.network.ClientCode;
@@ -39,7 +40,7 @@ public class Player {
     public Player(int playerNum, Socket socket) {
         this.socket = socket;
         this.playerNum = playerNum;
-        this.name = "Player " + playerNum;
+        this.name = "New Player";
 
         output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -49,20 +50,17 @@ public class Player {
                 try {
                     int packetSize = input.readInt();
                     ClientPacket packet = ClientPacket.fromBytes(input.readNBytes(packetSize));
-                    System.out.println("packetQueueFillerThread received packet " + packet.networkCode + " from " + name);
                     if(initialPacketHandler(packet)) {
                         try {
-                            System.out.println("Adding packet to queue");
                             packetQueue.add(packet);
                         } catch(Exception e) {
                             e.printStackTrace();
                         }
-                    } else {
-                        System.out.println("Not adding packet to queue");
                     }
                 } catch(IOException e) {
+                    Gdx.app.log("packQueueFillerThread for player " + name,
+                            "Encountered IOException, dropping connection");
                     dropConnection();
-                    e.printStackTrace();
                     return; // I think IOException means the player disconnected, so the queue filler thread can exit
                 } catch(SerializationException | IllegalArgumentException | OutOfMemoryError e) {
                     e.printStackTrace();
@@ -121,7 +119,6 @@ public class Player {
     }
 
     public synchronized ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
-        System.out.println("Waiting for packet from " + name);
         ClientPacket ret = packetQueue.take();
         if(ret instanceof PlayerDisconnectedItem) {
             throw new PlayerDisconnectedException(this);

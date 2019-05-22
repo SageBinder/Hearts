@@ -162,6 +162,7 @@ public class CreateGameScreen implements Screen, InputProcessor {
                     return;
                 }
                 errorLabel.setText("");
+                game.openServerPort();
                 game.showLobbyScreen();
             }
         });

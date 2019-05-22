@@ -176,13 +176,20 @@ public class LobbyScreen implements Screen, InputProcessor {
                             new BufferedReader(
                                     new InputStreamReader(
                                             new URL("https://api.ipify.org").openStream())).readLine();
-                    gameIPLabel.setText("Hosting on [CYAN]" + thisMachineIP + "[]:[ORANGE]" + client.port);
+                    gameIPLabel.setText("Hosting on [CYAN]" + thisMachineIP + "[]:[ORANGE]" + client.port + "[]");
                 } catch(IOException e) {
-                    gameIPLabel.setText("[YELLOW]Error: could not determine your IP");
+                    gameIPLabel.setText("[YELLOW]Error: could not determine your IP[]");
+                }
+                if(!game.successfullyOpenedServerPort()) {
+                    gameIPLabel.setText(gameIPLabel.getText()
+                            + "\nCouldn't open port [ORANGE]" + client.port + "[]. Players may not be able to join your game.");
                 }
             }).start();
         }
-
+        gameState.message = "Connecting...";
+        messageLabel.setText("");
+        quitConfirmationFlag = false;
+        quitConfirmationTimer.clear();
         inputProcessorsSetup();
     }
 
@@ -206,15 +213,27 @@ public class LobbyScreen implements Screen, InputProcessor {
         var pCallRankHeaderLabel = new Label("POINTS", labelStyle);
         pNameHeaderLabel.setAlignment(Align.center);
 
+        TextButton shufflePlayersButton = null;
+        if(gameState.thisPlayer != null && gameState.thisPlayer.isHost()) {
+            shufflePlayersButton = new TextButton("Shuffle players", textButtonStyle);
+            shufflePlayersButton.addListener(new ClickListener(Input.Buttons.LEFT) {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    requestPlayerShuffle();
+                }
+            });
+        }
+
         playersListTable.clearChildren();
         playersListTable.setFillParent(false);
         playersListTable.setWidth(viewport.getWorldWidth() / 20f);
         playersListTable.defaults();
 
         playersListTable.row().padBottom(viewport.getWorldHeight() / 20f);
-        playersListTable.add(pNumHeaderLabel).padRight(groupSpacing);
-        playersListTable.add(pNameHeaderLabel);
+        playersListTable.add(pNumHeaderLabel);
+        playersListTable.add(pNameHeaderLabel).padLeft(groupSpacing);
         playersListTable.add(pCallRankHeaderLabel).padLeft(groupSpacing);
+        playersListTable.add(shufflePlayersButton).padLeft(groupSpacing).colspan(3);
 
         Arrays.stream(gameState.players).filter(Objects::nonNull).forEach(p -> {
             var playerNumLabel = new Label("P" + p.getPlayerNum(), labelStyle);
@@ -321,6 +340,15 @@ public class LobbyScreen implements Screen, InputProcessor {
             ClientPacket resetPointsPacket = new ClientPacket(ClientCode.RESET_PLAYER_POINTS);
             resetPointsPacket.data.put("player", playerNum);
             client.sendPacket(resetPointsPacket);
+        } catch(IOException e) {
+            messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
+        }
+    }
+
+    private void requestPlayerShuffle() {
+        try {
+            ClientPacket shufflePlayersPacket = new ClientPacket(ClientCode.SHUFFLE_PLAYERS);
+            client.sendPacket(shufflePlayersPacket);
         } catch(IOException e) {
             messageLabel.setText("[YELLOW]Error connecting to server. Maybe you lost connection?");
         }

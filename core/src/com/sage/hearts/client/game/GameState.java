@@ -50,6 +50,19 @@ public class GameState {
         this.game = game;
     }
 
+    public void clean() {
+        for(int i = 0; i < players.length; i++) {
+            players[i] = null;
+        }
+        turnPlayer = null;
+        leadingPlayer = null;
+        hostPlayer = null;
+        thisPlayer = null;
+        thisPlayerHand.clear();
+        warheadMap.clear();
+        lastWarheads.clear();
+    }
+
     public boolean update(ClientConnection client) {
         if(client == null) {
             return false;
@@ -374,7 +387,13 @@ public class GameState {
         }
 
         private void successfulWarheads() {
-            message = "Warheads successfully sent.";
+            message = "Warheads successfully sent to "
+                    + getPlayerByPlayerNum(warheadMap.get(thisPlayer.getPlayerNum()))
+                    .orElseThrow(() -> new InvalidServerPacketException(
+                            "successfulWarheads() - No player found with player num "
+                                    + warheadMap.get(thisPlayer.getPlayerNum())
+                                    + ", gotten from warheadMap.get(" + thisPlayer.getPlayerNum() + ")"
+                    )).getName();
         }
 
         private void waitForWarheads() {

@@ -135,6 +135,7 @@ public class StartScreen implements Screen, InputProcessor {
 
     @Override
     public void show() {
+        gameState.clean();
         inputProcessorsSetup();
     }
 

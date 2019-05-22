@@ -23,6 +23,7 @@ public class HeartsGame extends Game {
     private GameState gameState;
     private ClientConnection clientConnection;
     private Server server;
+    private boolean successfullyOpenedServerPort = false;
 
     private Screen startScreen,
             createGameScreen,
@@ -108,10 +109,20 @@ public class HeartsGame extends Game {
 
         this.server = new Server(port); // If server couldn't be started it will throw an exception
         server.start();
+    }
 
-        if(!UPnP.isMappedTCP(port)) { // Port only opens if starting the server didn't throw an exception
-            UPnP.openPortTCP(port); // TODO: Warning message or something if UPnP fails
+    public void openServerPort() {
+        if(server == null) {
+            return;
         }
+
+        if(!UPnP.isMappedTCP(server.port)) {
+            successfullyOpenedServerPort = UPnP.openPortTCP(server.port);
+        }
+    }
+
+    public boolean successfullyOpenedServerPort() {
+        return successfullyOpenedServerPort;
     }
 
     public void closeGameServer() {
@@ -119,6 +130,7 @@ public class HeartsGame extends Game {
             new Thread(() -> UPnP.closePortTCP(server.port)).start();
             server.close();
             server = null;
+            successfullyOpenedServerPort = false;
         }
     }
 
@@ -132,6 +144,14 @@ public class HeartsGame extends Game {
 
     @Override
     public void dispose() {
+        startScreen.dispose();
+        createGameScreen.dispose();
+        joinGameScreen.dispose();
+        optionsScreen.dispose();
+        lobbyScreen.dispose();
+        gameScreen.dispose();
+        playgroundScreen.dispose();
+        closeGameServer();
     }
 
     public static void clearScreen() {

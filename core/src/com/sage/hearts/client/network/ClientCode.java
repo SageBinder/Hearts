@@ -9,5 +9,6 @@ public enum ClientCode implements NetworkCode {
     WARHEADS,
     NAME,
     PLAYER_POINTS_CHANGE,
-    RESET_PLAYER_POINTS
+    RESET_PLAYER_POINTS,
+    SHUFFLE_PLAYERS
 }

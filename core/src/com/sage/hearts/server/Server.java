@@ -5,6 +5,7 @@ import com.badlogic.gdx.Net;
 import com.badlogic.gdx.net.NetJavaServerSocketImpl;
 import com.badlogic.gdx.net.ServerSocketHints;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.badlogic.gdx.utils.SerializationException;
 import com.sage.hearts.client.network.ClientCode;
 import com.sage.hearts.server.game.GameState;
 import com.sage.hearts.server.game.Player;
@@ -14,6 +15,7 @@ import com.sage.hearts.server.network.PlayerDisconnectedException;
 import com.sage.hearts.server.network.ServerCode;
 import com.sage.hearts.server.network.ServerPacket;
 
+import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -127,8 +129,9 @@ public class Server extends Thread {
             }
             return false; // This packet does not need to be put into the player's packetQueue
         });
+
         player.setInitialPacketHandlerForCode(ClientCode.START_GAME, packet -> {
-            if(host == player && !startRoundFlag) {
+            if(player == host && !startRoundFlag) {
                 startRoundFlag = true; // This simply requests the round runner thread to start; it does not force the round to start
                 synchronized(startRoundObj) {
                     startRoundObj.notify();
@@ -138,35 +141,62 @@ public class Server extends Thread {
             }
             return false; // This packet does not need to be put into the player's packetQueue
         });
+
         player.setInitialPacketHandlerForCode(ClientCode.PLAYER_POINTS_CHANGE, packet -> {
-            if(gameState.lock.tryLock()
-                    && packet.data.get("player") instanceof Integer
-                    && packet.data.get("pointschange") instanceof Integer) {
-                gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
-                    p.incrementPointsOffset((Integer)packet.data.get("pointschange"));
-                    ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
-                    newPlayerPointsPacket.data.put("player", p.getPlayerNum());
-                    newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
-                    gameState.players.sendPacketToAll(newPlayerPointsPacket);
-                });
+            if(gameState.lock.tryLock()) {
+                if(packet.data.get("player") instanceof Integer
+                        && packet.data.get("pointschange") instanceof Integer
+                        && player == host) {
+                    gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
+                        p.incrementPointsOffset((Integer)packet.data.get("pointschange"));
+                        ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
+                        newPlayerPointsPacket.data.put("player", p.getPlayerNum());
+                        newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
+                        sendPacketToAllAndHandleDisconnections(newPlayerPointsPacket);
+                    });
+                }
                 gameState.lock.unlock();
             }
             return false;
         });
+
         player.setInitialPacketHandlerForCode(ClientCode.RESET_PLAYER_POINTS, packet -> {
-            if(gameState.lock.tryLock() && packet.data.get("player") instanceof Integer) {
-                gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
-                    p.setPointsOffset(0);
-                    ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
-                    newPlayerPointsPacket.data.put("player", p.getPlayerNum());
-                    newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
-                    gameState.players.sendPacketToAll(newPlayerPointsPacket);
-                });
+            if(gameState.lock.tryLock()) {
+                if(packet.data.get("player") instanceof Integer && player == host) {
+                    gameState.players.getByPlayerNum((Integer)packet.data.get("player")).ifPresent(p -> {
+                        p.setPointsOffset(0);
+                        ServerPacket newPlayerPointsPacket = new ServerPacket(ServerCode.NEW_PLAYER_POINTS);
+                        newPlayerPointsPacket.data.put("player", p.getPlayerNum());
+                        newPlayerPointsPacket.data.put("points", p.getAccumulatedPoints());
+                        sendPacketToAllAndHandleDisconnections(newPlayerPointsPacket);
+                    });
+                }
                 gameState.lock.unlock();
             }
             return false;
         });
+
+        player.setInitialPacketHandlerForCode(ClientCode.SHUFFLE_PLAYERS, packet -> {
+            if(gameState.lock.tryLock()) {
+                if(player == host) {
+                    Collections.shuffle(gameState.players);
+                    sendPlayersToAllUntilNoDisconnections();
+                }
+                gameState.lock.unlock();
+            }
+            return false;
+        });
+
         player.setInitialPacketHandlerForCode(ClientCode.PING, packet -> false);
+    }
+
+    private void sendPacketToAllAndHandleDisconnections(ServerPacket packet) {
+        try {
+            gameState.players.sendPacketToAll(packet);
+        } catch(MultiplePlayersDisconnectedException e) {
+            gameState.players.removeDisconnectedPlayers();
+            sendPlayersToAllUntilNoDisconnections();
+        }
     }
 
     public void close() {
@@ -201,7 +231,10 @@ public class Server extends Thread {
                 }
                 // If round is started, we can immediately end the connection
                 if(gameState.roundStarted) { // gameState.roundStarted is volatile so we don't need to lock
-                    newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_DENIED));
+                    try {
+                        newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_DENIED));
+                    }  catch(SerializationException | PlayerDisconnectedException ignored) {
+                    }
                     continue;
                 }
 
@@ -212,7 +245,11 @@ public class Server extends Thread {
                     // the round has started (the lock will not be acquirable while the round is running)
                     acquiredLock = gameState.lock.tryLock(10, TimeUnit.SECONDS);
                 } catch(InterruptedException e) {
-                    newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_DENIED));
+                    try {
+                        newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_DENIED));
+                    } catch(SerializationException | PlayerDisconnectedException ignored) {
+                    }
+                    gameState.lock.unlock();
                     continue;
                 }
 
@@ -220,7 +257,11 @@ public class Server extends Thread {
                 // If the lock was acquired, the round must not be running.
                 // Even if the round isn't running, new players cannot be accepted if the maximum number of players was reached
                 if(!acquiredLock || gameState.players.size() == NUM_PLAYERS_TO_START) {
-                    newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_DENIED));
+                    try {
+                        newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_DENIED));
+                    } catch(SerializationException | PlayerDisconnectedException ignored) {
+                    }
+                    gameState.lock.unlock();
                     continue;
                 }
 
@@ -230,10 +271,17 @@ public class Server extends Thread {
                 }
                 newPlayer.setPlayerNum(gameState.players.size());
                 setInitialPacketHandlersForPlayer(newPlayer);
-                newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_ACCEPTED));
+                try {
+                    newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_ACCEPTED));
+                } catch(SerializationException | PlayerDisconnectedException e) {
+                    // If a PlayerDisconnectedException is encountered here, we can simply not add the new player to
+                    // gameState.players.
+                    gameState.lock.unlock();
+                    continue;
+                }
+
                 gameState.players.add(newPlayer);
                 sendPlayersToAllUntilNoDisconnections();
-
                 gameState.lock.unlock();
             }
         }
