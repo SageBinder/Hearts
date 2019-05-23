@@ -6,7 +6,6 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.utils.Timer;
-import com.badlogic.gdx.utils.Timer.Task;
 import com.dosse.upnp.UPnP;
 import com.sage.hearts.client.game.GameState;
 import com.sage.hearts.client.network.ClientCode;
@@ -28,16 +27,17 @@ public class HeartsGame extends Game {
     private Screen startScreen,
             createGameScreen,
             joinGameScreen,
-            optionsScreen,
             lobbyScreen,
             gameScreen,
             playgroundScreen;
 
+    private Timer titleTimer;
+
     @Override
     public void create() {
         Gdx.graphics.setTitle("❤️❤️❤️");
-        Timer titleTimer = new Timer();
-        titleTimer.scheduleTask(new Task() {
+        titleTimer = new Timer();
+        titleTimer.scheduleTask(new Timer.Task() {
             private int count = 0;
             private final int numHeartsInTitle = 3;
             @Override
@@ -55,7 +55,6 @@ public class HeartsGame extends Game {
         startScreen = new StartScreen(this);
         createGameScreen = new CreateGameScreen(this);
         joinGameScreen = new JoinGameScreen(this);
-        optionsScreen = new OptionsScreen(this);
         lobbyScreen = new LobbyScreen(this);
         gameScreen = new GameScreen(this);
         playgroundScreen = new PlaygroundScreen(this);
@@ -74,10 +73,6 @@ public class HeartsGame extends Game {
 
     public void showJoinGameScreen() {
         setScreen(joinGameScreen);
-    }
-
-    public void showOptionsScreen() {
-        setScreen(optionsScreen);
     }
 
     public void showLobbyScreen() {
@@ -142,12 +137,19 @@ public class HeartsGame extends Game {
         return gameState;
     }
 
+    public void startTitleTimer() {
+        titleTimer.start();
+    }
+
+    public void stopTitleTimer() {
+        titleTimer.stop();
+    }
+
     @Override
     public void dispose() {
         startScreen.dispose();
         createGameScreen.dispose();
         joinGameScreen.dispose();
-        optionsScreen.dispose();
         lobbyScreen.dispose();
         gameScreen.dispose();
         playgroundScreen.dispose();

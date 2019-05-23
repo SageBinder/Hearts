@@ -8,6 +8,7 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.samples = 16;
+		config.forceExit = false;
 		new LwjglApplication(new HeartsGame(), config);
 	}
 }

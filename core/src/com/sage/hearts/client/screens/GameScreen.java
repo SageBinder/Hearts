@@ -168,8 +168,8 @@ public class GameScreen implements Screen, InputProcessor {
 
         uiTable.pack();
         float uiTableX = playersCenterX - (uiTable.getWidth() * 0.5f);
-        float uiTableY = topPlayer != null
-                ? topPlayer.collectedPointCards.pos.y - (uiTable.getHeight())
+        float uiTableY = (!renderPlayers) ? playersCenterY - (uiTable.getHeight() * 0.5f)
+                : (topPlayer != null) ? topPlayer.collectedPointCards.pos.y - (uiTable.getHeight())
                 : playersCenterY - actionButton.getHeight();
         uiTable.setPosition(uiTableX, uiTableY);
         uiStage.act(delta);
@@ -295,7 +295,7 @@ public class GameScreen implements Screen, InputProcessor {
         button.setVisible(true);
     }
 
-    private static void disableButton(TextButton button) {
+    private void disableButton(TextButton button) {
         while(button.getListeners().size > 1) {
             button.getListeners().removeIndex(button.getListeners().size - 1);
         }

@@ -274,13 +274,18 @@ public class GameState {
         }
 
         private void successfulPlay() {
-            // If this player's play was the base play, set its color accordingly
-            if(Arrays.stream(players).filter(player -> player.getPlay().isPresent()).count() == 1) {
-                thisPlayer.getPlay().ifPresent(play -> {
+            thisPlayer.getPlay().ifPresent(play -> {
+                // If the play was a hearts card, hearts must be broken if it wasn't before
+                if(heartsBroke |= thisPlayer.getPlay().get().getSuit() == Suit.HEARTS) {
+                    Gdx.graphics.setTitle("\uD83D\uDC94\uD83D\uDC94\uD83D\uDC94");
+                }
+
+                // If this player's play was the base play, set its color accordingly.
+                if(Arrays.stream(players).filter(player -> player.getPlay().isPresent()).count() == 1) {
                     play.entity.defaultFaceBackgroundColor.set(basePlayColor);
                     play.entity.setFaceBackgroundColor(play.entity.defaultFaceBackgroundColor);
-                });
-            }
+                }
+            });
             message = "Play successfully made.";
         }
 
@@ -325,7 +330,9 @@ public class GameState {
                 newPlay.entity.defaultFaceBackgroundColor.set(basePlayColor);
                 newPlay.entity.setFaceBackgroundColor(newPlay.entity.defaultFaceBackgroundColor);
             }
-            heartsBroke |= newPlay.getSuit() == Suit.HEARTS;
+            if(heartsBroke |= newPlay.getSuit() == Suit.HEARTS) {
+                Gdx.graphics.setTitle("\uD83D\uDC94\uD83D\uDC94\uD83D\uDC94");
+            }
         }
 
         private void waitForLeadingPlayer() {
@@ -392,6 +399,8 @@ public class GameState {
             }
             System.arraycopy(newPlayerArr, 0, players, 0, newPlayerArr.length);
 
+            game.stopTitleTimer();
+            Gdx.graphics.setTitle("❤️❤️❤️");
             game.showGameScreen();
         }
 
@@ -466,6 +475,7 @@ public class GameState {
                         player.clearNameColor();
                         message += "\n" + player.getName() + " has " + player.getAccumulatedPoints() + " points";
                     });
+            game.startTitleTimer();
         }
 
         private void lostConnectionToServer() {

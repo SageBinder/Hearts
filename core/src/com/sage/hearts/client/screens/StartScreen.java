@@ -27,7 +27,7 @@ public class StartScreen implements Screen, InputProcessor {
     private Table table;
     private TextButton createGameButton;
     private TextButton joinGameButton;
-    private TextButton optionsButton;
+    private TextButton quitButton;
     private Label gameStateMessageLabel;
 
     private FreeTypeFontGenerator fontGenerator;
@@ -88,11 +88,13 @@ public class StartScreen implements Screen, InputProcessor {
             }
         });
 
-        optionsButton = new TextButton("Options", textButtonStyle);
-        optionsButton.addListener(new ChangeListener() {
+        quitButton = new TextButton("Exit", textButtonStyle);
+        quitButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.showOptionsScreen();
+                game.stopTitleTimer();
+                Gdx.graphics.setTitle("\uD83D\uDC94\uD83D\uDC94\uD83D\uDC94");
+                Gdx.app.exit();
             }
         });
 
@@ -115,7 +117,7 @@ public class StartScreen implements Screen, InputProcessor {
                 .prefHeight(viewport.getWorldHeight()* 0.1f);
 
         table.row().padTop(viewport.getWorldHeight() * 0.18f);
-        table.add(optionsButton)
+        table.add(quitButton)
                 .prefWidth(viewport.getWorldWidth() * 0.3f)
                 .prefHeight(viewport.getWorldHeight()* 0.1f);
 
