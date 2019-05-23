@@ -24,6 +24,9 @@ import java.util.stream.Collectors;
 public class GameState {
     // Light Goldenrod
     public static final Color winningPlayColor = new Color(238f / 255f, 221f / 255f, 130f / 255f, 1f);
+    public static final Color basePlayColor = Color.LIGHT_GRAY;
+    public static final Color turnPlayerNameColor = Color.LIGHT_GRAY;
+    public static final Color warheadReceiverNameColor = Color.FIREBRICK;
 
     private Updater updater = new Updater();
     private final HeartsGame game;
@@ -89,7 +92,7 @@ public class GameState {
     private Optional<RenderablePlayer> getPlayerByPlayerNum(Integer playerNum) {
         return (playerNum == null)
                 ? Optional.empty()
-                : Arrays.stream(players).filter(p -> p.getPlayerNum() == playerNum).findFirst();
+                : Arrays.stream(players).filter(player -> player.getPlayerNum() == playerNum).findFirst();
     }
 
     private class Updater {
@@ -239,18 +242,25 @@ public class GameState {
 
         // --- TRICK CODES ---
         private void trickStart() {
-            Arrays.stream(players).forEach(RenderablePlayer::clearPlay);
+            Arrays.stream(players).forEach(player -> {
+                player.clearPlay();
+                player.clearNameColor();
+            });
         }
 
         private void playTwoOfClubs() {
             thisPlayer.clearPlay();
             thisPlayer.setPlay(thisPlayerHand.getAndRemove(Rank.TWO, Suit.CLUBS)
                     .orElse(new RenderableHeartsCard(Rank.TWO, Suit.CLUBS)));
+            thisPlayer.getPlay().ifPresent(play -> {
+                play.entity.defaultFaceBackgroundColor.set(basePlayColor);
+                play.entity.setFaceBackgroundColor(play.entity.defaultFaceBackgroundColor);
+            });
             message = "You had the two of clubs";
         }
 
         private void makePlay() {
-            message = "It's your turn.";
+            message = "It's your turn";
             turnPlayer = thisPlayer;
         }
 
@@ -264,17 +274,33 @@ public class GameState {
         }
 
         private void successfulPlay() {
+            // If this player's play was the base play, set its color accordingly
+            if(Arrays.stream(players).filter(player -> player.getPlay().isPresent()).count() == 1) {
+                thisPlayer.getPlay().ifPresent(play -> {
+                    play.entity.defaultFaceBackgroundColor.set(basePlayColor);
+                    play.entity.setFaceBackgroundColor(play.entity.defaultFaceBackgroundColor);
+                });
+            }
             message = "Play successfully made.";
         }
 
         private void waitForTurnPlayer() {
+            if(turnPlayer != null) {
+                if(turnPlayer == leadingPlayer) {
+                    turnPlayer.setNameColor(winningPlayColor);
+                } else {
+                    turnPlayer.clearNameColor();
+                }
+            }
+
             turnPlayer = getPlayerByPlayerNum((Integer)data.get("player"))
                     .orElseThrow(() -> new InvalidServerPacketException(
                             "waitForTurnPlayer() - No player found with player num "
                                     + data.get("player")
                                     + " sent by server for turn player"));
+            turnPlayer.setNameColor(turnPlayerNameColor);
             message = "It's "
-                    + turnPlayer.getName()
+                    + "P" + turnPlayer.getPlayerNum() + ": " + turnPlayer.getColoredName()
                     + (turnPlayer.getName().charAt(turnPlayer.getName().length() - 1) == 's' ? "'" : "'s") // Pluralizing
                     + " turn";
         }
@@ -293,21 +319,30 @@ public class GameState {
             }
 
             newPlayPlayer.clearPlay(); // newPlayPlayer.play should already be null but clear just in case
+            boolean newPlayIsBasePlay = Arrays.stream(players).noneMatch(player -> player.getPlay().isPresent());
             newPlayPlayer.setPlay(newPlay);
+            if(newPlayIsBasePlay) {
+                newPlay.entity.defaultFaceBackgroundColor.set(basePlayColor);
+                newPlay.entity.setFaceBackgroundColor(newPlay.entity.defaultFaceBackgroundColor);
+            }
             heartsBroke |= newPlay.getSuit() == Suit.HEARTS;
         }
 
         private void waitForLeadingPlayer() {
+            if(leadingPlayer != null) {
+                leadingPlayer.getPlay().ifPresent(c ->
+                        c.entity.setFaceBackgroundColor(c.entity.defaultFaceBackgroundColor));
+                leadingPlayer.clearNameColor();
+            }
+
             leadingPlayer = getPlayerByPlayerNum((Integer)data.get("player"))
                     .orElseThrow(() -> new InvalidServerPacketException(
                             "waitForLeadingPlayer() - No player found with player num "
                                     + data.get("player")
                                     + " sent by server for leading player"
                     ));
-            Arrays.stream(players).forEach(p ->
-                    p.getPlay().ifPresent(c ->
-                            c.entity.setFaceBackgroundColor(c.entity.defaultFaceBackgroundColor)));
             leadingPlayer.getPlay().ifPresent(c -> c.entity.setFaceBackgroundColor(winningPlayColor));
+            leadingPlayer.setNameColor(winningPlayColor);
         }
 
         private void trickEnd() {
@@ -327,7 +362,7 @@ public class GameState {
                 throw new InvalidServerPacketException("trickEnd() - server sent an invalid card num for a trick point card");
             }
             trickWinner.collectedPointCards.addAll(pointCardsInTrick);
-            message = trickWinner.getName() + " won the trick and collects "
+            message = trickWinner.getName() + " won the trick.\nCollects "
                     + pointCardsInTrick.stream().mapToInt(HeartsCard::getPoints).sum()
                     + " points";
         }
@@ -374,30 +409,33 @@ public class GameState {
         }
 
         private void sendWarheads() {
-            message = "Select 3 cards to send to "
-                    + getPlayerByPlayerNum(warheadMap.get(thisPlayer.getPlayerNum()))
+            var receivingPlayer = getPlayerByPlayerNum(warheadMap.get(thisPlayer.getPlayerNum()))
                     .orElseThrow(() -> new InvalidServerPacketException(
                             "sendWarheads() - No player found with player num "
                                     + warheadMap.get(thisPlayer.getPlayerNum())
                                     + ", gotten from warheadMap.get(" + thisPlayer.getPlayerNum() + ")"
-                    )).getName();
+                    ));
+            receivingPlayer.setNameColor(warheadReceiverNameColor);
+            message = "Select 3 cards to send to "
+                    + receivingPlayer.getColoredName();
         }
 
         private void invalidWarheads() {
-            message = "Error: invalid warheads. Try again.";
+            message = "Error: invalid cards. Try again.";
             thisPlayerHand.addAll(lastWarheads);
             lastWarheads.clear();
         }
 
         private void successfulWarheads() {
             lastWarheads.clear();
-            message = "Warheads successfully sent to "
-                    + getPlayerByPlayerNum(warheadMap.get(thisPlayer.getPlayerNum()))
+            var receivingPlayer = getPlayerByPlayerNum(warheadMap.get(thisPlayer.getPlayerNum()))
                     .orElseThrow(() -> new InvalidServerPacketException(
                             "successfulWarheads() - No player found with player num "
                                     + warheadMap.get(thisPlayer.getPlayerNum())
                                     + ", gotten from warheadMap.get(" + thisPlayer.getPlayerNum() + ")"
-                    )).getName();
+                    ));
+            message = "Cards successfully sent to "
+                    + receivingPlayer.getColoredName();
         }
 
         private void waitForWarheads() {
@@ -424,7 +462,10 @@ public class GameState {
 
             message = "Round over!";
             Arrays.stream(players)
-                    .forEach(p -> message += "\n" + p.getName() + " has " + p.getAccumulatedPoints() + " points");
+                    .forEach(player -> {
+                        player.clearNameColor();
+                        message += "\n" + player.getName() + " has " + player.getAccumulatedPoints() + " points";
+                    });
         }
 
         private void lostConnectionToServer() {
@@ -441,7 +482,7 @@ public class GameState {
         public void sendWarheads(ClientConnection client) {
             // This if serves essentially the same purpose as the corresponding guard if in sendPlay()
             if(!lastWarheads.isEmpty()) {
-                message = "Your warheads are being validated by the server...";
+                message = "Your cards are being validated by the server...";
                 return;
             }
 
@@ -459,7 +500,7 @@ public class GameState {
                 }
                 thisPlayerHand.removeAll(selectedCards);
                 lastWarheads.addAll(selectedCards);
-                message = "Sending warheads...";
+                message = "Sending cards...";
             } else {
                 message = "You must select 3 cards to send";
             }

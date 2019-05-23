@@ -25,10 +25,6 @@ public class RoundRunner {
         roundStartPacket.data.put("playerorder", gameState.players.stream().mapToInt(Player::getPlayerNum).toArray());
         gameState.players.sendPacketToAll(roundStartPacket);
 
-        for(Player p : gameState.players) {
-            System.out.println(p.getPlayerNum() + ": " + p.getName());
-        }
-
         Deck deck = new Deck(false);
         deck.shuffle();
         deck.dealToPlayers(gameState.players);
@@ -104,14 +100,10 @@ public class RoundRunner {
         for(int i = 0, size = gameState.players.size(); i < size; i++) {
             Player p = gameState.players.get(i);
             warheadThreads[i] = new Thread(() -> {
-                System.out.println("Thread start for player " + p.getName());
                 while(true) {
                     try {
-                        System.out.println("About to wait for packet from player " + p.getName());
                         ClientPacket warheadPacket = p.waitForPacket();
-                        System.out.println("Received a packet from " + p.getName());
                         if(warheadPacket.networkCode != ClientCode.WARHEADS) {
-                            System.out.println("Didn't receive warhead packet from " + p.getName());
                             continue;
                         }
                         CardList<HeartsCard> warheads =
@@ -120,19 +112,16 @@ public class RoundRunner {
                                         .collect(Collectors.toCollection(CardList::new));
                         if(gameState.areValidWarheads(p, warheads)) {
                             p.sendPacket(new ServerPacket(ServerCode.SUCCESSFUL_WARHEADS));
-                            System.out.println("Received successful warheads from " + p.getName());
                             synchronized(allWarheads) {
                                 allWarheads.put(p, warheads);
                             }
                             numFinishedThreads.incrementAndGet();
                             synchronized(waitObject) {
-                                System.out.println("Notifying waitObject...");
                                 waitObject.notify();
                             }
                             return;
                         } else {
                             p.sendPacket(new ServerPacket(ServerCode.INVALID_WARHEADS));
-                            System.out.println("Received invalid warheads from " + p.getName());
                         }
                     } catch(InterruptedException e) {
                         if(playerDisconnected.get()) {
@@ -140,7 +129,6 @@ public class RoundRunner {
                             synchronized(waitObject) {
                                 waitObject.notify();
                             }
-                            System.out.println("Caught InterruptedException from " + p.getName());
                             return;
                         }
                     } catch(PlayerDisconnectedException e) {
@@ -149,11 +137,9 @@ public class RoundRunner {
                         synchronized(waitObject) {
                             waitObject.notify();
                         }
-                        System.out.println("Caught PlayerDisconnectedException from " + p.getName());
                         return;
                     } catch(NullPointerException | ClassCastException e) {
                         p.sendPacket(new ServerPacket(ServerCode.INVALID_WARHEADS));
-                        System.out.println("Caught exception, received invalid warheads from " + p.getName());
 
                     }
                 }
@@ -167,17 +153,13 @@ public class RoundRunner {
         while(numFinishedThreads.intValue() < warheadThreads.length) {
             synchronized(waitObject) {
                 try {
-                    System.out.println("Main thread, waiting...");
                     waitObject.wait();
                 } catch(InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println("Main thread, checking condition numFinishedThreads.intValue() < warheadThreads.length which is "
-                        + (numFinishedThreads.intValue() < warheadThreads.length));
             }
             if(playerDisconnected.get() && !alreadyInterrupted) {
                 gameState.players.forEach(Player::interruptPacketWaiting);
-                System.out.println("INTERRUPTED");
                 alreadyInterrupted = true;
             }
         }

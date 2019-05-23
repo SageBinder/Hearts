@@ -128,6 +128,7 @@ public class CreateGameScreen implements Screen, InputProcessor {
         errorLabel.setAlignment(Align.center);
 
         createGameButton = new TextButton("Start game", textButtonStyle);
+        createGameButton.setProgrammaticChangeEvents(true);
         createGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -142,7 +143,7 @@ public class CreateGameScreen implements Screen, InputProcessor {
                 try {
                     port = Integer.parseInt(portField.getText());
                 } catch(NumberFormatException e) {
-                    errorLabel.setText("[RED]Error: Port must be an number");
+                    errorLabel.setText("[RED]Error: Port must be an number between 1 and 65535 inclusive");
                     return;
                 }
 
@@ -241,8 +242,13 @@ public class CreateGameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
-        if(keycode == Input.Keys.ESCAPE) {
+        switch(keycode) {
+        case Input.Keys.ESCAPE:
             game.showStartScreen();
+            break;
+        case Input.Keys.ENTER:
+            createGameButton.toggle();
+            break;
         }
         return false;
     }

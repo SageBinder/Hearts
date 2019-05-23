@@ -20,7 +20,7 @@ public class RenderableCardGroup<T extends Card & RenderableCard> extends Render
             rotationRad = 0.0f;
 
     private ShapeRenderer debugRenderer = new ShapeRenderer();
-    private boolean inDebugMode = true;
+    private boolean inDebugMode = false;
 
 
     public RenderableCardGroup() {

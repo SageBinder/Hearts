@@ -124,6 +124,7 @@ public class JoinGameScreen implements Screen, InputProcessor {
         errorLabel.setAlignment(Align.center);
 
         joinGameButton = new TextButton("Join game", textButtonStyle);
+        joinGameButton.setProgrammaticChangeEvents(true);
         joinGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -143,7 +144,7 @@ public class JoinGameScreen implements Screen, InputProcessor {
                 try {
                     port = Integer.parseInt(portField.getText());
                 } catch(NumberFormatException e) {
-                    errorLabel.setText("[RED]Error: Port must be an number");
+                    errorLabel.setText("[RED]Error: Port must be an number between 1 and 65535 inclusive");
                     return;
                 }
 
@@ -241,8 +242,13 @@ public class JoinGameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
-        if(keycode == Input.Keys.ESCAPE) {
+        switch(keycode) {
+        case Input.Keys.ESCAPE:
             game.showStartScreen();
+            break;
+        case Input.Keys.ENTER:
+            joinGameButton.toggle();
+            break;
         }
         return false;
     }

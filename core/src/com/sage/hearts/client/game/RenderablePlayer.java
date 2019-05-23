@@ -12,6 +12,7 @@ import com.sage.hearts.utils.hearts.HeartsCard;
 import com.sage.hearts.utils.renderable.Renderable;
 import com.sage.hearts.utils.renderable.RenderableCardEntity;
 import com.sage.hearts.utils.renderable.RenderableCardGroup;
+import net.dermetfan.gdx.math.MathUtils;
 
 import java.util.Optional;
 
@@ -41,12 +42,12 @@ public class RenderablePlayer implements Renderable {
 
     public RenderablePlayer(int playerNum, String name) {
         this.playerNum = playerNum;
-        this.name = playerNum + ": " + name;
+        this.name = name;
     }
 
     @Override
     public void render(SpriteBatch batch, Viewport viewport) {
-        nameFont.draw(batch, colorString + getName(),
+        nameFont.draw(batch, "P" + playerNum + ": " + colorString + getName(),
                 pos.x, pos.y + (nameFont.getXHeight() * 2),
                 0, Align.center, false);
 
@@ -72,8 +73,14 @@ public class RenderablePlayer implements Renderable {
             c.entity.mover.posSpeed = 8;
         });
         collectedPointCards.cardHeight = playTargetHeight * 0.5f;
-        collectedPointCards.regionWidth = isExpanded ? playTargetWidth * collectedPointCards.size() : 2.2f * playTargetWidth;
-        collectedPointCards.pos.x = (playTargetX + (playTargetWidth * 0.5f)) - (collectedPointCards.regionWidth * 0.5f);
+        float pointGroupCardWidth = collectedPointCards.cardHeight * RenderableCardEntity.WIDTH_TO_HEIGHT_RATIO;
+        collectedPointCards.regionWidth = (isExpanded)
+                ? pointGroupCardWidth * collectedPointCards.size()
+                : 2.2f * pointGroupCardWidth;
+        collectedPointCards.pos.x =
+                MathUtils.clamp((playTargetX + (playTargetWidth * 0.5f)) - (collectedPointCards.regionWidth * 0.5f),
+                        0,
+                        viewport.getWorldWidth() - collectedPointCards.regionWidth);
         collectedPointCards.pos.y = playTargetY - (collectedPointCards.cardHeight * 1.05f);
         collectedPointCards.prefDivisionProportion = 1.1f;
         collectedPointCards.render(batch, viewport);
@@ -86,11 +93,15 @@ public class RenderablePlayer implements Renderable {
 
     public void setNameColor(Color nameColor) {
         colorString = "[#"
-                + Float.toHexString(nameColor.r)
-                + Float.toHexString(nameColor.g)
-                + Float.toHexString(nameColor.b)
-                + Float.toHexString(nameColor.a)
+                + Integer.toHexString((int)(nameColor.r * 255))
+                + Integer.toHexString((int)(nameColor.g * 255))
+                + Integer.toHexString((int)(nameColor.b * 255))
+                + Integer.toHexString((int)(nameColor.a * 255))
                 + "]";
+    }
+
+    public void clearNameColor() {
+        colorString = "";
     }
 
     public int getPlayerNum() {
@@ -103,6 +114,10 @@ public class RenderablePlayer implements Renderable {
 
     public String getName() {
         return name;
+    }
+
+    public String getColoredName() {
+        return colorString + name + "[]";
     }
 
     public void setName(String name) {

@@ -187,6 +187,7 @@ public class Server extends Thread {
                 if(gameState.lock.tryLock(1, TimeUnit.SECONDS)) {
                     if(player == host) {
                         Collections.shuffle(gameState.players);
+                        gameState.players.squashPlayerNums();
                         sendPlayersToAllUntilNoDisconnections();
                     }
                     gameState.lock.unlock();

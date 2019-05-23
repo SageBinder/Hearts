@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.client.HeartsGame;
@@ -20,6 +21,9 @@ import com.sage.hearts.client.game.RenderablePlayer;
 import com.sage.hearts.client.network.ClientConnection;
 import com.sage.hearts.server.network.ServerCode;
 import org.apache.commons.lang3.ArrayUtils;
+
+import java.util.Arrays;
+import java.util.Objects;
 
 public class GameScreen implements Screen, InputProcessor {
     private HeartsGame game;
@@ -42,6 +46,8 @@ public class GameScreen implements Screen, InputProcessor {
 
     private float updateDelay = 0;
     private float delayCounter = 0;
+
+    private boolean renderPlayers = true;
 
     public GameScreen(HeartsGame game) {
         this.game = game;
@@ -85,13 +91,14 @@ public class GameScreen implements Screen, InputProcessor {
 
         // Creating UI elements:
         messageLabel = new Label("", messageLabelStyle);
+        messageLabel.setAlignment(Align.center);
+        messageLabel.setWrap(true);
 
         actionButton = new TextButton("", actionButtonStyle);
         actionButton.setProgrammaticChangeEvents(true);
 
         // Organizing UI elements into table:
         uiTable = new Table();
-        uiTable.debug();
         uiTable.setFillParent(false);
 
         uiTable.row().padBottom(viewport.getWorldHeight() / 120f);
@@ -130,11 +137,7 @@ public class GameScreen implements Screen, InputProcessor {
             delayCounter = 0;
         }
 
-        for(RenderablePlayer p : gameState.players) {
-            if(p != null) {
-                p.setExpanded(false);
-            }
-        }
+        Arrays.stream(gameState.players).filter(Objects::nonNull).forEach(p -> p.setExpanded(false));
         if(Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT)) {
             Vector2 mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
             outer:
@@ -162,10 +165,12 @@ public class GameScreen implements Screen, InputProcessor {
         float playersCenterY = viewport.getWorldHeight() * 0.66f;
         var topPlayerIdx = (ArrayUtils.indexOf(gameState.players, gameState.thisPlayer) + (gameState.players.length / 2)) % gameState.players.length;
         var topPlayer = gameState.players[Math.max(topPlayerIdx, 0)];
+
+        uiTable.pack();
         float uiTableX = playersCenterX - (uiTable.getWidth() * 0.5f);
         float uiTableY = topPlayer != null
-                ? topPlayer.collectedPointCards.pos.y - uiTable.getHeight()
-                : playersCenterY - (uiTable.getHeight() * 0.5f);
+                ? topPlayer.collectedPointCards.pos.y - (uiTable.getHeight())
+                : playersCenterY - actionButton.getHeight();
         uiTable.setPosition(uiTableX, uiTableY);
         uiStage.act(delta);
         updateCards(delta);
@@ -174,9 +179,9 @@ public class GameScreen implements Screen, InputProcessor {
         HeartsGame.clearScreen();
 
         batch.begin();
-        if(gameState.lastServerCode != ServerCode.ROUND_END) {
+        if(renderPlayers) {
             renderPlayers(playersCenterX, playersCenterY,
-                    viewport.getWorldWidth() * 0.35f,viewport.getWorldHeight() * 0.22f);
+                    viewport.getWorldWidth() * 0.3f,viewport.getWorldHeight() * 0.22f);
         }
         gameState.thisPlayerHand.render(batch, viewport);
         batch.end();
@@ -242,25 +247,27 @@ public class GameScreen implements Screen, InputProcessor {
 
         case TRICK_END:
             disableButton(actionButton);
-            updateDelay = 2;
+            updateDelay = 4;
             break;
 
         case ROUND_END:
-            enableButton(actionButton, () -> {
-                game.showLobbyScreen();
-            });
+            enableButton(actionButton, () -> game.showLobbyScreen());
             actionButton.setText("Exit to lobby");
+            renderPlayers = false;
             break;
 
         case PLAY_TWO_OF_CLUBS:
             disableButton(actionButton);
             actionButton.setText("");
-            updateDelay = 1;
+            updateDelay = 2;
+            break;
 
+        case ROUND_START:
+            renderPlayers = true;
+            // --- FALL THROUGH ---
         case SUCCESSFUL_PLAY:
         case SUCCESSFUL_WARHEADS:
         case TRICK_START:
-        case ROUND_START:
         case WAIT_FOR_WARHEADS:
         case WAIT_FOR_LEADING_PLAYER:
         case WAIT_FOR_TURN_PLAYER:
@@ -268,6 +275,7 @@ public class GameScreen implements Screen, InputProcessor {
         case WAIT_FOR_NEW_PLAY:
             disableButton(actionButton);
             actionButton.setText("");
+            // --- FALL THROUGH ---
         default:
             updateDelay = 0;
         }
@@ -327,8 +335,13 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyUp(int keycode) {
-        if(keycode == Input.Keys.ENTER) {
+        switch(keycode) {
+        case Input.Keys.ENTER:
             actionButton.toggle();
+            // --- FALL THROUGH ---
+        case Input.Keys.SPACE:
+            updateDelay = 0;
+            break;
         }
         return false;
     }
@@ -341,7 +354,6 @@ public class GameScreen implements Screen, InputProcessor {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         var clickPos = viewport.unproject(new Vector2(screenX, screenY));
-
         if(button == Input.Buttons.LEFT) {
             for(var i = gameState.thisPlayerHand.reverseListIterator(); i.hasPrevious(); ) {
                 var entity = i.previous().entity;
@@ -351,7 +363,6 @@ public class GameScreen implements Screen, InputProcessor {
                 }
             }
         }
-
         return false;
     }
 
