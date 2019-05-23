@@ -109,10 +109,12 @@ public class Player {
         }
     }
 
-    public synchronized Optional<ClientPacket> getPacket() throws PlayerDisconnectedException {
+    public synchronized Optional<ClientPacket> getPacket() throws InterruptedException, PlayerDisconnectedException {
         ClientPacket ret = packetQueue.poll();
         if(ret instanceof PlayerDisconnectedItem) {
             throw new PlayerDisconnectedException(this);
+        } else if(ret instanceof InterruptItem) {
+            throw new InterruptedException();
         } else {
             return Optional.ofNullable(ret);
         }
@@ -171,10 +173,6 @@ public class Player {
 
     public boolean socketIsConnected() {
         return socket.isConnected();
-    }
-
-    public void ping() throws SerializationException, PlayerDisconnectedException {
-        sendPacket(ServerPacket.pingPacket());
     }
 
     public int getAccumulatedPoints() {

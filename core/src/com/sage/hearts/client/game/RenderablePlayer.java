@@ -72,11 +72,11 @@ public class RenderablePlayer implements Renderable {
             c.entity.mover.sizeSpeed = 8;
             c.entity.mover.posSpeed = 8;
         });
-        collectedPointCards.cardHeight = playTargetHeight * 0.5f;
+        collectedPointCards.cardHeight = playTargetHeight * 0.66f;
         float pointGroupCardWidth = collectedPointCards.cardHeight * RenderableCardEntity.WIDTH_TO_HEIGHT_RATIO;
         collectedPointCards.regionWidth = (isExpanded)
-                ? pointGroupCardWidth * collectedPointCards.size()
-                : 2.2f * pointGroupCardWidth;
+                ? MathUtils.max(new float[]{pointGroupCardWidth * collectedPointCards.size(), 1.1f * pointGroupCardWidth})
+                : 3.3f * pointGroupCardWidth;
         collectedPointCards.pos.x =
                 MathUtils.clamp((playTargetX + (playTargetWidth * 0.5f)) - (collectedPointCards.regionWidth * 0.5f),
                         0,
@@ -130,6 +130,10 @@ public class RenderablePlayer implements Renderable {
 
     public void setAccumulatedPoints(int accumulatedPoints) {
         this.accumulatedPoints = accumulatedPoints;
+    }
+
+    public void addToAccumulatedPoints(int change) {
+        accumulatedPoints += change;
     }
 
     public int getRoundPoints() {

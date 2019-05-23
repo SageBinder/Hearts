@@ -171,6 +171,7 @@ public class GameScreen implements Screen, InputProcessor {
         float uiTableY = (!renderPlayers) ? playersCenterY - (uiTable.getHeight() * 0.5f)
                 : (topPlayer != null) ? topPlayer.collectedPointCards.pos.y - (uiTable.getHeight())
                 : playersCenterY - actionButton.getHeight();
+        uiTableY -= uiTable.getHeight() * 0.1f;
         uiTable.setPosition(uiTableX, uiTableY);
         uiStage.act(delta);
         updateCards(delta);
@@ -257,6 +258,7 @@ public class GameScreen implements Screen, InputProcessor {
             break;
 
         case PLAY_TWO_OF_CLUBS:
+        case SUCCESSFUL_PLAY:
             disableButton(actionButton);
             actionButton.setText("");
             updateDelay = 2;
@@ -265,7 +267,6 @@ public class GameScreen implements Screen, InputProcessor {
         case ROUND_START:
             renderPlayers = true;
             // --- FALL THROUGH ---
-        case SUCCESSFUL_PLAY:
         case SUCCESSFUL_WARHEADS:
         case TRICK_START:
         case WAIT_FOR_WARHEADS:

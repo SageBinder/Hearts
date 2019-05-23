@@ -369,6 +369,7 @@ public class GameState {
                 throw new InvalidServerPacketException("trickEnd() - server sent an invalid card num for a trick point card");
             }
             trickWinner.collectedPointCards.addAll(pointCardsInTrick);
+            trickWinner.collectedPointCards.sort(HeartsCard::compareTo);
             message = trickWinner.getName() + " won the trick.\nCollects "
                     + pointCardsInTrick.stream().mapToInt(HeartsCard::getPoints).sum()
                     + " points";
@@ -460,21 +461,27 @@ public class GameState {
         }
 
         private void roundEnd() {
-            Map<Integer, Integer> playerPointsMap = (Map<Integer, Integer>)data.get("pointsmap");
-            playerPointsMap.keySet().forEach(playerNum ->
-                    getPlayerByPlayerNum(playerNum)
-                            .orElseThrow(() -> new InvalidServerPacketException(
-                            "roundEnd() - No player found with player num "
-                                    + playerNum
-                                    + " sent by server in playerPointsMap"
-                            )).setAccumulatedPoints(playerPointsMap.get(playerNum)));
+            Map<Integer, Integer> gainedPointsMap = (Map<Integer, Integer>)data.get("gainedpointsmap");
+            boolean endedEarly = (boolean)data.get("endedearly");
+            int shotTheMoonPlayerNum = (int)data.get("shotthemoon"); // server will send -1 if no player shot the moon
+            Optional<RenderablePlayer> shotTheMoonPlayer = getPlayerByPlayerNum(shotTheMoonPlayerNum);
 
             message = "Round over!";
-            Arrays.stream(players)
-                    .forEach(player -> {
-                        player.clearNameColor();
-                        message += "\n" + player.getName() + " has " + player.getAccumulatedPoints() + " points";
-                    });
+            if(endedEarly) message += " (All point cards have been played)";
+            if(shotTheMoonPlayer.isPresent()) {
+                message += "\n" + shotTheMoonPlayer.get().getName() + " shot the moon! Everybody else gains 26 points!";
+            } else {
+                Arrays.stream(players).forEach(player -> {
+                    Integer gainedPoints = Optional.ofNullable(gainedPointsMap.get(player.getPlayerNum())).orElse(0);
+                    player.clearNameColor();
+                    player.addToAccumulatedPoints(gainedPoints);
+                    message += "\n";
+                    if(player == thisPlayer) message += "->";
+                    message += "P" + player.getPlayerNum() + ": "
+                            + player.getName() + " gained " + gainedPoints + " points";
+                });
+            }
+
             game.startTitleTimer();
         }
 
