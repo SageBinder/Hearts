@@ -60,6 +60,7 @@ public class LobbyScreen implements Screen, InputProcessor {
 
     private boolean quitConfirmationFlag = false;
     private Timer quitConfirmationTimer = new Timer();
+    private float quitConfirmationDelay = 3;
 
     public LobbyScreen(HeartsGame game) {
         this.game = game;
@@ -393,7 +394,7 @@ public class LobbyScreen implements Screen, InputProcessor {
                         messageLabel.setText("");
                         quitConfirmationFlag = false;
                     }
-                }, 3);
+                }, quitConfirmationDelay);
             } else {
                 client.quit();
                 game.closeGameServer();

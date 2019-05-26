@@ -1,6 +1,8 @@
 package com.sage.hearts.client.screens;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.MathUtils;
@@ -13,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.client.HeartsGame;
@@ -43,6 +46,13 @@ public class GameScreen implements Screen, InputProcessor {
     private FreeTypeFontGenerator fontGenerator;
     private FreeTypeFontGenerator.FreeTypeFontParameter labelFontParameter;
     private FreeTypeFontGenerator.FreeTypeFontParameter textButtonFontParameter;
+
+    private BitmapFont quitConfirmationFont;
+    private String quitConfirmationText = "";
+
+    private boolean quitConfirmationFlag = false;
+    private Timer quitConfirmationTimer = new Timer();
+    private float quitConfirmationDelay = 3f;
 
     private float updateDelay = 0;
     private float delayCounter = 0;
@@ -77,6 +87,12 @@ public class GameScreen implements Screen, InputProcessor {
         textButtonFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
         textButtonFontParameter.size = textSize;
         textButtonFontParameter.incremental = true;
+
+        var leaveWarningFontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        leaveWarningFontParameter.size = (int)(textSize * 1.3f);
+        leaveWarningFontParameter.color = Color.RED;
+        leaveWarningFontParameter.incremental = true;
+        quitConfirmationFont = fontGenerator.generateFont(leaveWarningFontParameter);
     }
 
     private void uiSetup() {
@@ -185,6 +201,10 @@ public class GameScreen implements Screen, InputProcessor {
                     viewport.getWorldWidth() * 0.3f,viewport.getWorldHeight() * 0.22f);
         }
         gameState.thisPlayerHand.render(batch, viewport);
+        quitConfirmationFont.draw(batch, quitConfirmationText,
+                viewport.getWorldWidth() / 2,
+                viewport.getWorldHeight() - quitConfirmationFont.getCapHeight(),
+                0, Align.center, false);
         batch.end();
 
         uiStage.draw();
@@ -331,6 +351,24 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
+        if(keycode == Input.Keys.ESCAPE) {
+            if(!quitConfirmationFlag) {
+                quitConfirmationText = "[RED]Press ESC again to leave the game[]";
+                quitConfirmationFlag = true;
+                quitConfirmationTimer.scheduleTask(new Timer.Task() {
+                    @Override
+                    public void run() {
+                        quitConfirmationText = "";
+                        quitConfirmationFlag = false;
+                    }
+                }, quitConfirmationDelay);
+            } else {
+                client.quit();
+                game.closeGameServer();
+                gameState.message = "You left the game";
+                game.showStartScreen();
+            }
+        }
         return false;
     }
 

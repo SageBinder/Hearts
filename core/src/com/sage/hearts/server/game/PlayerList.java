@@ -53,7 +53,7 @@ public class PlayerList extends ArrayList<Player> {
                 stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getName, (a, b) -> b, HashMap::new));
         HashMap<Integer, Integer> accumulatedPoints =
                 stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getAccumulatedPoints, (a, b) -> b, HashMap::new));
-        Integer hostNum = stream().filter(Player::isHost).findFirst().orElse(this.get(0)).getPlayerNum();
+        Integer hostNum = stream().filter(Player::isHost).findAny().orElse(this.get(0)).getPlayerNum();
 
         // Pretty much copy/pasted code from sendPacketToAll()
         PlayerList disconnectedPlayers = null;

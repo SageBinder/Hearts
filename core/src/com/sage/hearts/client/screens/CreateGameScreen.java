@@ -79,7 +79,6 @@ public class CreateGameScreen implements Screen, InputProcessor {
 
         var textFieldStyle = skin.get(TextField.TextFieldStyle.class);
         textFieldStyle.font = fontGenerator.generateFont(nameFieldFontParameter);
-        textFieldStyle.font.getData().markupEnabled = true;
 
         var labelStyle = skin.get(Label.LabelStyle.class);
         labelStyle.font = fontGenerator.generateFont(errorLabelFontParameter);
