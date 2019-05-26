@@ -33,9 +33,11 @@ public class Player {
     private final DataOutputStream output;
     private final DataInputStream input;
     private final BlockingQueue<ClientPacket> packetQueue = new LinkedBlockingQueue<>();
+    private volatile boolean isWaitingForPacket = false;
 
     private final Thread packetQueueFillerThread;
     private final Map<ClientCode, PacketHandler> initialPacketHandlers = new ConcurrentHashMap<>();
+    private OnDisconnectAction onDisconnectAction;
 
     public Player(int playerNum, Socket socket) {
         this.socket = socket;
@@ -61,12 +63,13 @@ public class Player {
                     Gdx.app.log("packQueueFillerThread for player " + name,
                             "Encountered IOException, dropping connection");
                     dropConnection();
-                    return; // I think IOException means the player disconnected, so the queue filler thread can exit
+                    return;
                 } catch(SerializationException | IllegalArgumentException | OutOfMemoryError e) {
                     e.printStackTrace();
                 }
             }
         });
+        packetQueueFillerThread.setDaemon(true);
         packetQueueFillerThread.start();
     }
 
@@ -87,6 +90,14 @@ public class Player {
 
     public void resetInitialPacketHandlers() {
         initialPacketHandlers.clear();
+    }
+
+    public void setOnDisconnect(OnDisconnectAction action) {
+        onDisconnectAction = action;
+    }
+
+    public void resetOnDisconnect() {
+        onDisconnectAction = null;
     }
 
     public void resetForNewRound() {
@@ -121,30 +132,44 @@ public class Player {
     }
 
     public synchronized ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
-        ClientPacket ret = packetQueue.take();
-        if(ret instanceof PlayerDisconnectedItem) {
-            throw new PlayerDisconnectedException(this);
-        } else if(ret instanceof InterruptItem) {
-            throw new InterruptedException();
-        } else {
-            return ret;
-        }
-    }
-
-    public synchronized Optional<ClientPacket> waitForPacket(long timeout, TimeUnit unit)
-            throws InterruptedException, PlayerDisconnectedException {
-        if(timeout <= 0) {
-            return Optional.of(waitForPacket());
-        } else {
-            ClientPacket ret = packetQueue.poll(timeout, unit);
+        try {
+            isWaitingForPacket = true;
+            ClientPacket ret = packetQueue.take();
             if(ret instanceof PlayerDisconnectedItem) {
                 throw new PlayerDisconnectedException(this);
             } else if(ret instanceof InterruptItem) {
                 throw new InterruptedException();
             } else {
-                return Optional.ofNullable(ret);
+                return ret;
             }
+        } finally {
+            isWaitingForPacket = false;
         }
+    }
+
+    public synchronized Optional<ClientPacket> waitForPacket(long timeout, TimeUnit unit)
+            throws InterruptedException, PlayerDisconnectedException {
+        try {
+            isWaitingForPacket = true;
+            if(timeout <= 0) {
+                return Optional.of(waitForPacket());
+            } else {
+                ClientPacket ret = packetQueue.poll(timeout, unit);
+                if(ret instanceof PlayerDisconnectedItem) {
+                    throw new PlayerDisconnectedException(this);
+                } else if(ret instanceof InterruptItem) {
+                    throw new InterruptedException();
+                } else {
+                    return Optional.ofNullable(ret);
+                }
+            }
+        } finally {
+            isWaitingForPacket = false;
+        }
+    }
+
+    public boolean isWaitingForPacket() {
+        return isWaitingForPacket;
     }
 
     public int getPlayerNum() {
@@ -204,8 +229,15 @@ public class Player {
     }
 
     public void dropConnection() {
+        if(onDisconnectAction != null) {
+            onDisconnectAction.action();
+        }
         packetQueue.add(new PlayerDisconnectedItem());
         socket.dispose();
+    }
+
+    public void clearPacketQueue() {
+        packetQueue.clear();
     }
 
     private abstract class PoisonQueueItem extends ClientPacket {
@@ -223,5 +255,9 @@ public class Player {
     public interface PacketHandler {
         // Returns whether or not the packet should be propagated to the packetQueue
         boolean handle(final ClientPacket packet);
+    }
+
+    public interface OnDisconnectAction {
+        void action();
     }
 }

@@ -51,11 +51,6 @@ public class PlayerList extends ArrayList<Player> {
 
         HashMap<Integer, String> players =
                 stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getName, (a, b) -> b, HashMap::new));
-        System.out.println("sending" + players);
-        for(Player p : this) {
-            System.out.println(p.getPlayerNum() + ": " + p.getName());
-        }
-        System.out.println();
         HashMap<Integer, Integer> accumulatedPoints =
                 stream().collect(Collectors.toMap(Player::getPlayerNum, Player::getAccumulatedPoints, (a, b) -> b, HashMap::new));
         Integer hostNum = stream().filter(Player::isHost).findFirst().orElse(this.get(0)).getPlayerNum();

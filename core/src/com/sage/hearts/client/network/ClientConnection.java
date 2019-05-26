@@ -39,6 +39,7 @@ public class ClientConnection extends Thread {
         output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 
+        setDaemon(true);
         Runtime.getRuntime().addShutdownHook(new Thread(socket::dispose));
     }
 

@@ -44,6 +44,7 @@ public class Server extends Thread {
         hints.acceptTimeout = 0;
         serverSocket = new NetJavaServerSocketImpl(Net.Protocol.TCP, port, hints);
 
+        setDaemon(true);
         Runtime.getRuntime().addShutdownHook(new Thread(this::close));
     }
 

@@ -15,8 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class RoundRunner {
-    public static void playRound(GameState gameState)
-            throws PlayerDisconnectedException, MultiplePlayersDisconnectedException {
+    public static void playRound(GameState gameState) {
         gameState.resetForNewRound();
 
         gameState.players.sendPlayersToAll();
@@ -32,11 +31,16 @@ public class RoundRunner {
         sendHands(gameState);
         tradeWarheads(gameState);
 
+        gameState.players.forEach(p -> p.setOnDisconnect(() -> {
+            gameState.players.forEach(Player::interruptPacketWaiting);
+        }));
+
         do {
             TrickRunner.playTrick(gameState);
         } while(gameState.players.stream().anyMatch(p -> p.hand.stream().anyMatch(c -> c.getPoints() > 0)));
         // There's no point in continuing play if all point cards have been played and distributed
 
+        gameState.players.forEach(Player::resetOnDisconnect);
         gameState.players.sendPacketToAll(updatePointsAndGetRoundEndPacket(gameState));
     }
 
@@ -76,8 +80,7 @@ public class RoundRunner {
         return roundEndPacket;
     }
 
-    private static void sendHands(GameState gameState)
-            throws PlayerDisconnectedException, MultiplePlayersDisconnectedException {
+    private static void sendHands(GameState gameState) {
         gameState.players.forEach(p -> {
             ServerPacket handPacket = new ServerPacket(ServerCode.WAIT_FOR_HAND);
             handPacket.data.put("hand", p.hand.toCardNumList());
@@ -85,8 +88,7 @@ public class RoundRunner {
         });
     }
 
-    private static void tradeWarheads(GameState gameState)
-            throws PlayerDisconnectedException, MultiplePlayersDisconnectedException {
+    private static void tradeWarheads(GameState gameState) {
         Map<Player, CardList<HeartsCard>> warheadsMap = getValidWarheadsFromAll(gameState);
 
         for(Player sender : warheadsMap.keySet()) {
@@ -185,7 +187,7 @@ public class RoundRunner {
         }
         if(playerDisconnected.get()) {
             Optional<Player> firstDisconnectedPlayer =
-                    gameState.players.stream().filter(p -> !p.socketIsConnected()).findFirst();
+                    gameState.players.stream().filter(p -> !p.socketIsConnected()).findAny();
             assert firstDisconnectedPlayer.isPresent();
             throw new PlayerDisconnectedException(firstDisconnectedPlayer.get());
         }

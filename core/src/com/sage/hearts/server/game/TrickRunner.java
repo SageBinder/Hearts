@@ -2,7 +2,6 @@ package com.sage.hearts.server.game;
 
 import com.sage.hearts.client.network.ClientCode;
 import com.sage.hearts.client.network.ClientPacket;
-import com.sage.hearts.server.network.MultiplePlayersDisconnectedException;
 import com.sage.hearts.server.network.PlayerDisconnectedException;
 import com.sage.hearts.server.network.ServerCode;
 import com.sage.hearts.server.network.ServerPacket;
@@ -12,10 +11,8 @@ import com.sage.hearts.utils.hearts.HeartsCard;
 
 import java.util.Objects;
 
-// This is very bad
-public class TrickRunner {
-    public static void playTrick(GameState gameState)
-            throws PlayerDisconnectedException, MultiplePlayersDisconnectedException {
+class TrickRunner {
+    static void playTrick(GameState gameState) {
         gameState.resetForNewTrick();
         gameState.players.sendPacketToAll(new ServerPacket(ServerCode.TRICK_START));
 
@@ -96,7 +93,7 @@ public class TrickRunner {
     }
 
     private static HeartsCard getValidPlayFromTurnPlayer(GameState gameState) {
-        HeartsCard play = null;
+        HeartsCard play;
         gameState.turnPlayer.sendPacket(new ServerPacket(ServerCode.MAKE_PLAY));
         while(true) {
             try {
@@ -106,16 +103,24 @@ public class TrickRunner {
                 }
                 play = new HeartsCard(Objects.requireNonNull((Integer)packet.data.get("play")));
             } catch(InterruptedException e) {
-                if(!gameState.turnPlayer.socketIsConnected()) {
-                    throw new PlayerDisconnectedException(gameState.turnPlayer);
-                } else {
-                    continue;
+                var disconnectedPlayer = gameState.players.stream().filter(p -> !p.socketIsConnected()).findAny();
+                if(disconnectedPlayer.isPresent()) {
+                    gameState.players.forEach(Player::clearPacketQueue);
+                    throw new PlayerDisconnectedException(disconnectedPlayer.get());
                 }
+
+                if(!gameState.turnPlayer.socketIsConnected()) {
+                    gameState.players.forEach(Player::clearPacketQueue);
+                    throw new PlayerDisconnectedException(gameState.turnPlayer);
+                }
+
+                continue;
             } catch(NullPointerException | ClassCastException e) {
                 gameState.turnPlayer.sendPacket(new ServerPacket(ServerCode.INVALID_PLAY));
+                continue;
             }
 
-            if(play != null && gameState.isValidPlay(gameState.turnPlayer, play)) {
+            if(gameState.isValidPlay(gameState.turnPlayer, play)) {
                 gameState.turnPlayer.sendPacket(new ServerPacket(ServerCode.SUCCESSFUL_PLAY));
                 return play;
             } else {
