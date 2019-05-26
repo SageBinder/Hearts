@@ -49,7 +49,6 @@ class TrickRunner {
 
         ServerPacket trickEndPacket = new ServerPacket(ServerCode.TRICK_END);
         trickEndPacket.data.put("winner", gameState.leadingPlayer.getPlayerNum());
-        trickEndPacket.data.put("pointcards", gameState.pointCardsInTrick.toCardNumList());
         gameState.players.sendPacketToAll(trickEndPacket);
     }
 

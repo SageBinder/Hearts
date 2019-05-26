@@ -9,6 +9,7 @@ import com.sage.hearts.client.network.ClientPacket;
 import com.sage.hearts.client.network.LostConnectionToServerException;
 import com.sage.hearts.server.network.ServerCode;
 import com.sage.hearts.server.network.ServerPacket;
+import com.sage.hearts.utils.card.CardList;
 import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
@@ -97,6 +98,7 @@ public class GameState {
 
     private class Updater {
         private Map<Serializable, Serializable> data = null;
+        private final CardList<RenderableHeartsCard> pointCardsInTrick = new CardList<>();
         private boolean update(ServerCode serverCode, Map<Serializable, Serializable> data) {
             if(serverCode != ServerCode.PING) {
                 lastServerCode = serverCode;
@@ -242,6 +244,16 @@ public class GameState {
 
         // --- TRICK CODES ---
         private void trickStart() {
+            if(leadingPlayer != null && !pointCardsInTrick.isEmpty()) {
+                pointCardsInTrick.forEach(c -> {
+                    c.entity.defaultFaceBackgroundColor.set(Color.WHITE);
+                    c.entity.resetFaceBackgroundColor();
+                });
+                leadingPlayer.collectedPointCards.addAll(pointCardsInTrick);
+                leadingPlayer.collectedPointCards.sort(HeartsCard::compareTo);
+                pointCardsInTrick.clear();
+            }
+
             Arrays.stream(players).forEach(player -> {
                 player.clearPlay();
                 player.clearNameColor();
@@ -254,7 +266,7 @@ public class GameState {
                     .orElse(new RenderableHeartsCard(Rank.TWO, Suit.CLUBS)));
             thisPlayer.getPlay().ifPresent(play -> {
                 play.entity.defaultFaceBackgroundColor.set(basePlayColor);
-                play.entity.setFaceBackgroundColor(play.entity.defaultFaceBackgroundColor);
+                play.entity.resetFaceBackgroundColor();
             });
             message = "You had the two of clubs";
         }
@@ -283,7 +295,11 @@ public class GameState {
                 // If this player's play was the base play, set its color accordingly.
                 if(Arrays.stream(players).filter(player -> player.getPlay().isPresent()).count() == 1) {
                     play.entity.defaultFaceBackgroundColor.set(basePlayColor);
-                    play.entity.setFaceBackgroundColor(play.entity.defaultFaceBackgroundColor);
+                    play.entity.resetFaceBackgroundColor();
+                }
+
+                if(play.getPoints() > 0) {
+                    pointCardsInTrick.add(play);
                 }
             });
             message = "Play successfully made.";
@@ -328,7 +344,10 @@ public class GameState {
             newPlayPlayer.setPlay(newPlay);
             if(newPlayIsBasePlay) {
                 newPlay.entity.defaultFaceBackgroundColor.set(basePlayColor);
-                newPlay.entity.setFaceBackgroundColor(newPlay.entity.defaultFaceBackgroundColor);
+                newPlay.entity.resetFaceBackgroundColor();
+            }
+            if(newPlay.getPoints() > 0) {
+                pointCardsInTrick.add(newPlay);
             }
             if(heartsBroke |= newPlay.getSuit() == Suit.HEARTS) {
                 Gdx.graphics.setTitle("\uD83D\uDC94\uD83D\uDC94\uD83D\uDC94");
@@ -337,8 +356,7 @@ public class GameState {
 
         private void waitForLeadingPlayer() {
             if(leadingPlayer != null) {
-                leadingPlayer.getPlay().ifPresent(c ->
-                        c.entity.setFaceBackgroundColor(c.entity.defaultFaceBackgroundColor));
+                leadingPlayer.getPlay().ifPresent(c -> c.entity.resetFaceBackgroundColor());
                 leadingPlayer.clearNameColor();
             }
 
@@ -359,17 +377,6 @@ public class GameState {
                                     + data.get("winner")
                                     + " sent by server for trick winner"
                     ));
-            List<Integer> pointCardNumsInTrick = (List<Integer>)data.get("pointcards");
-            RenderableCardList<RenderableHeartsCard> pointCardsInTrick;
-            try {
-                pointCardsInTrick = pointCardNumsInTrick.stream()
-                        .map(RenderableHeartsCard::new)
-                        .collect(Collectors.toCollection(RenderableCardList::new));
-            } catch(InvalidCardException e) {
-                throw new InvalidServerPacketException("trickEnd() - server sent an invalid card num for a trick point card");
-            }
-            trickWinner.collectedPointCards.addAll(pointCardsInTrick);
-            trickWinner.collectedPointCards.sort(HeartsCard::compareTo);
             message = trickWinner.getName() + " won the trick.\nCollects "
                     + pointCardsInTrick.stream().mapToInt(HeartsCard::getPoints).sum()
                     + " points";
@@ -381,6 +388,7 @@ public class GameState {
             turnPlayer = null;
             leadingPlayer = null;
             heartsBroke = false;
+            pointCardsInTrick.clear();
             message = "";
 
             warheadMap.clear();
@@ -461,6 +469,16 @@ public class GameState {
         }
 
         private void roundEnd() {
+            if(leadingPlayer != null && !pointCardsInTrick.isEmpty()) {
+                pointCardsInTrick.forEach(c -> {
+                    c.entity.defaultFaceBackgroundColor.set(Color.WHITE);
+                    c.entity.resetFaceBackgroundColor();
+                });
+                leadingPlayer.collectedPointCards.addAll(pointCardsInTrick);
+                leadingPlayer.collectedPointCards.sort(HeartsCard::compareTo);
+                pointCardsInTrick.clear();
+            }
+
             Map<Integer, Integer> gainedPointsMap = (Map<Integer, Integer>)data.get("gainedpointsmap");
             boolean endedEarly = (boolean)data.get("endedearly");
             int shotTheMoonPlayerNum = (int)data.get("shotthemoon"); // server will send -1 if no player shot the moon

@@ -353,7 +353,7 @@ public class GameScreen implements Screen, InputProcessor {
     public boolean keyDown(int keycode) {
         if(keycode == Input.Keys.ESCAPE) {
             if(!quitConfirmationFlag) {
-                quitConfirmationText = "[RED]Press ESC again to leave the game[]";
+                quitConfirmationText = "Press ESC again to leave the game";
                 quitConfirmationFlag = true;
                 quitConfirmationTimer.scheduleTask(new Timer.Task() {
                     @Override
