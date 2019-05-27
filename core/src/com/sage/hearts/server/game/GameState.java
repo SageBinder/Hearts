@@ -64,7 +64,7 @@ public class GameState {
         if(play == null || p == null || !p.hand.contains(play.getRank(), play.getSuit())) {
             return false;
         } else if(basePlay == null) {
-            return play.getSuit() != Suit.HEARTS || heartsBroke;
+            return play.getSuit() != Suit.HEARTS || p.hand.stream().allMatch(c -> c.getSuit() == Suit.HEARTS) || heartsBroke;
         } else if(play.getSuit() != basePlay.getSuit()) {
             boolean isValid = !p.hand.containsAnySuit(basePlay.getSuit());
             if(isValid && play.getSuit() == Suit.HEARTS) {
