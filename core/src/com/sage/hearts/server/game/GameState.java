@@ -63,6 +63,8 @@ public class GameState {
     public boolean isValidPlay(Player p, HeartsCard play) {
         if(play == null || p == null || !p.hand.contains(play.getRank(), play.getSuit())) {
             return false;
+        } else if(tricksPlayed == 1 && play.getPoints() > 0 && p.hand.stream().anyMatch(c -> c.getPoints() == 0)) {
+            return false;
         } else if(basePlay == null) {
             return play.getSuit() != Suit.HEARTS || p.hand.stream().allMatch(c -> c.getSuit() == Suit.HEARTS) || heartsBroke;
         } else if(play.getSuit() != basePlay.getSuit()) {
