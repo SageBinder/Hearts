@@ -60,7 +60,7 @@ public class Player {
                         }
                     }
                 } catch(IOException e) {
-                    Gdx.app.log("packQueueFillerThread for player " + name,
+                    Gdx.app.log("packQueueFillerThread for player " + playerNum + ": \"" + name + "\"",
                             "Encountered IOException, dropping connection");
                     dropConnection();
                     return;

@@ -155,7 +155,6 @@ public class RoundRunner {
                             }
                             return;
                         } else {
-                            System.out.print("The if was false!");
                             p.sendPacket(new ServerPacket(ServerCode.INVALID_WARHEADS));
                         }
                     } catch(InterruptedException e) {
@@ -174,7 +173,6 @@ public class RoundRunner {
                         }
                         return;
                     } catch(NullPointerException | ClassCastException e) {
-                        System.out.println("fuck fuck fuck fuck fuck");
                         p.sendPacket(new ServerPacket(ServerCode.INVALID_WARHEADS));
                     }
                 }

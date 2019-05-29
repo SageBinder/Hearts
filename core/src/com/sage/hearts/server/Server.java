@@ -229,14 +229,14 @@ public class Server extends Thread {
                 try {
                     gameState.addPlayer(newPlayer);
                     newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_ACCEPTED));
-                    sendPlayersToAllUntilNoDisconnections();
                 } catch(RoundIsRunningException e) {
                     // If gameState.addPlayer throws a RoundIsRunningException, the new player will not be added
                     newPlayer.sendPacket(new ServerPacket(ServerCode.CONNECTION_DENIED));
                 } catch(SerializationException | PlayerDisconnectedException e) {
-                    // If a PlayerDisconnectedException is encountered here, we can simply not add the new player to
-                    // gameState.players.
+                    // If a PlayerDisconnectedException is encountered here, the call to
+                    // sendPlayersToAllUntilNoDisconnections will remove newPlayer from the player list
                 }
+                sendPlayersToAllUntilNoDisconnections();
             }
         }
     };
