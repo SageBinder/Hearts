@@ -79,14 +79,6 @@ public class PlayerList extends ArrayList<Player> {
         }
     }
 
-    public boolean removeDisconnectedPlayers() {
-        boolean anyRemoved = removeIf(player -> !player.socketIsConnected());
-        if(anyRemoved) {
-            squashPlayerNums();
-        }
-        return anyRemoved;
-    }
-
     public Optional<Player> getByPlayerNum(int playerNum) {
         for(Player p : this) {
             if(p.getPlayerNum() == playerNum) {

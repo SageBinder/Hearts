@@ -15,33 +15,45 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class RoundRunner {
-    public static void playRound(GameState gameState) {
-        gameState.resetForNewRound();
+    public static void playRound(GameState gameState) throws RoundStartFailedException {
+        try {
+            gameState.setRoundRunning(true);
 
-        gameState.players.sendPlayersToAll();
-        ServerPacket roundStartPacket = new ServerPacket(ServerCode.ROUND_START);
-        roundStartPacket.data.put("warheadmap", gameState.warheadMap);
-        roundStartPacket.data.put("playerorder", gameState.players.stream().mapToInt(Player::getPlayerNum).toArray());
-        gameState.players.sendPacketToAll(roundStartPacket);
+            if(gameState.players.size() != GameState.NUM_PLAYERS_TO_START
+                    || gameState.players.stream().anyMatch(p -> Objects.isNull(p) || !p.socketIsConnected())) {
+                gameState.setRoundRunning(false);
+                throw new RoundStartFailedException();
+            }
 
-        Deck deck = new Deck(false);
-        deck.shuffle();
-        deck.dealToPlayers(gameState.players);
+            gameState.resetForNewRound();
 
-        sendHands(gameState);
-        tradeWarheads(gameState);
+            gameState.players.sendPlayersToAll();
+            ServerPacket roundStartPacket = new ServerPacket(ServerCode.ROUND_START);
+            roundStartPacket.data.put("warheadmap", gameState.warheadMap);
+            roundStartPacket.data.put("playerorder", gameState.players.stream().mapToInt(Player::getPlayerNum).toArray());
+            gameState.players.sendPacketToAll(roundStartPacket);
 
-        gameState.players.forEach(p -> p.setOnDisconnect(() -> {
-            gameState.players.forEach(Player::interruptPacketWaiting);
-        }));
+            Deck deck = new Deck(false);
+            deck.shuffle();
+            deck.dealToPlayers(gameState.players);
 
-        do {
-            TrickRunner.playTrick(gameState);
-        } while(gameState.players.stream().anyMatch(p -> p.hand.stream().anyMatch(c -> c.getPoints() > 0)));
-        // There's no point in continuing play if all point cards have been played and distributed
+            sendHands(gameState);
+            tradeWarheads(gameState);
 
-        gameState.players.forEach(Player::resetOnDisconnect);
-        gameState.players.sendPacketToAll(updatePointsAndGetRoundEndPacket(gameState));
+            gameState.players.forEach(p -> p.setOnDisconnect(() -> {
+                gameState.players.forEach(Player::interruptPacketWaiting);
+            }));
+
+            do {
+                TrickRunner.playTrick(gameState);
+            } while(gameState.players.stream().anyMatch(p -> p.hand.stream().anyMatch(c -> c.getPoints() > 0)));
+            // There's no point in continuing play if all point cards have been played and distributed
+
+            gameState.players.forEach(Player::resetOnDisconnect);
+            gameState.players.sendPacketToAll(updatePointsAndGetRoundEndPacket(gameState));
+        } finally {
+            gameState.setRoundRunning(false);
+        }
     }
 
     private static ServerPacket updatePointsAndGetRoundEndPacket(GameState gameState) {
@@ -143,6 +155,7 @@ public class RoundRunner {
                             }
                             return;
                         } else {
+                            System.out.print("The if was false!");
                             p.sendPacket(new ServerPacket(ServerCode.INVALID_WARHEADS));
                         }
                     } catch(InterruptedException e) {
@@ -161,8 +174,8 @@ public class RoundRunner {
                         }
                         return;
                     } catch(NullPointerException | ClassCastException e) {
+                        System.out.println("fuck fuck fuck fuck fuck");
                         p.sendPacket(new ServerPacket(ServerCode.INVALID_WARHEADS));
-
                     }
                 }
             });

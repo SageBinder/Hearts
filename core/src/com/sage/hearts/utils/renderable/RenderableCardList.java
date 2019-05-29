@@ -8,7 +8,6 @@ import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 
 import java.util.Collection;
-import java.util.stream.IntStream;
 
 public class RenderableCardList<T extends Card & RenderableCard> extends CardList<T> {
     public RenderableCardList() {
@@ -38,17 +37,11 @@ public class RenderableCardList<T extends Card & RenderableCard> extends CardLis
 
     @Override
     protected void removeRange(int fromIndex, int toIndex) {
-        IntStream.rangeClosed(fromIndex, toIndex).forEach(i -> get(i).dispose());
         super.removeRange(fromIndex, toIndex);
     }
 
     @Override
     public boolean removeAll(Collection<?> list) {
-        list.forEach(c -> {
-            if(contains(c) && c instanceof RenderableCard) {
-                ((RenderableCard)c).dispose();
-            }
-        });
         return super.removeAll(list);
     }
 

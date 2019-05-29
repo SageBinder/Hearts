@@ -42,7 +42,7 @@ public class Player {
     public Player(int playerNum, Socket socket) {
         this.socket = socket;
         this.playerNum = playerNum;
-        this.name = "New Player";
+        this.name = "Player " + playerNum;
 
         output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -73,7 +73,7 @@ public class Player {
         packetQueueFillerThread.start();
     }
 
-    private boolean initialPacketHandler(final ClientPacket packet) {
+    private synchronized boolean initialPacketHandler(final ClientPacket packet) {
         if(packet.networkCode != null) {
             PacketHandler handler = initialPacketHandlers.get(packet.networkCode);
             if(handler != null) {
@@ -84,87 +84,95 @@ public class Player {
     }
 
     // PacketHandler code will be run by packetQueueFillerThread
-    public void setInitialPacketHandlerForCode(ClientCode code, PacketHandler handler) {
+    public synchronized void setInitialPacketHandlerForCode(ClientCode code, PacketHandler handler) {
         initialPacketHandlers.put(code, handler);
     }
 
-    public void resetInitialPacketHandlers() {
+    public synchronized void resetInitialPacketHandlers() {
         initialPacketHandlers.clear();
     }
 
-    public void setOnDisconnect(OnDisconnectAction action) {
+    synchronized void setOnDisconnect(OnDisconnectAction action) {
         onDisconnectAction = action;
     }
 
-    public void resetOnDisconnect() {
+    synchronized void resetOnDisconnect() {
         onDisconnectAction = null;
     }
 
-    public void resetForNewRound() {
+    synchronized void resetForNewRound() {
         hand.clear();
         collectedPointCards.clear();
     }
 
-    public synchronized void sendPacket(final ServerPacket packet) throws SerializationException, PlayerDisconnectedException {
-        if(!socketIsConnected()) {
-            throw new PlayerDisconnectedException(this);
-        }
-        try {
-            byte[] packetBytes = packet.toBytes();
-            output.writeInt(packetBytes.length);
-            output.write(packetBytes);
-            output.flush();
-        } catch(IOException e) {
-            dropConnection();
-            throw new PlayerDisconnectedException(this);
-        }
-    }
-
-    public synchronized Optional<ClientPacket> getPacket() throws InterruptedException, PlayerDisconnectedException {
-        ClientPacket ret = packetQueue.poll();
-        if(ret instanceof PlayerDisconnectedItem) {
-            throw new PlayerDisconnectedException(this);
-        } else if(ret instanceof InterruptItem) {
-            throw new InterruptedException();
-        } else {
-            return Optional.ofNullable(ret);
+    public void sendPacket(final ServerPacket packet) throws SerializationException, PlayerDisconnectedException {
+        synchronized(output) {
+            if(!socketIsConnected()) {
+                throw new PlayerDisconnectedException(this);
+            }
+            try {
+                byte[] packetBytes = packet.toBytes();
+                output.writeInt(packetBytes.length);
+                output.write(packetBytes);
+                output.flush();
+            } catch(IOException e) {
+                dropConnection();
+                throw new PlayerDisconnectedException(this);
+            }
         }
     }
 
-    public synchronized ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
-        try {
-            isWaitingForPacket = true;
-            ClientPacket ret = packetQueue.take();
+    public Optional<ClientPacket> getPacket() throws InterruptedException, PlayerDisconnectedException {
+        synchronized(packetQueue) {
+            ClientPacket ret = packetQueue.poll();
             if(ret instanceof PlayerDisconnectedItem) {
                 throw new PlayerDisconnectedException(this);
             } else if(ret instanceof InterruptItem) {
                 throw new InterruptedException();
             } else {
-                return ret;
+                return Optional.ofNullable(ret);
             }
-        } finally {
-            isWaitingForPacket = false;
         }
     }
 
-    public synchronized Optional<ClientPacket> waitForPacket(long timeout, TimeUnit unit)
-            throws InterruptedException, PlayerDisconnectedException {
-        try {
-            isWaitingForPacket = true;
-            if(timeout <= 0) {
-                return Optional.of(waitForPacket());
-            } else {
-                ClientPacket ret = packetQueue.poll(timeout, unit);
+    public ClientPacket waitForPacket() throws InterruptedException, PlayerDisconnectedException {
+        synchronized(packetQueue) {
+            try {
+                isWaitingForPacket = true;
+                ClientPacket ret = packetQueue.take();
                 if(ret instanceof PlayerDisconnectedItem) {
                     throw new PlayerDisconnectedException(this);
                 } else if(ret instanceof InterruptItem) {
                     throw new InterruptedException();
                 } else {
-                    return Optional.ofNullable(ret);
+                    return ret;
                 }
+            } finally {
+                isWaitingForPacket = false;
             }
-        } finally {
-            isWaitingForPacket = false;
+        }
+    }
+
+    public Optional<ClientPacket> waitForPacket(long timeout, TimeUnit unit)
+            throws InterruptedException, PlayerDisconnectedException {
+        synchronized(packetQueue) {
+            try {
+                isWaitingForPacket = true;
+                if(timeout <= 0) {
+                    return Optional.of(waitForPacket());
+                } else {
+                    ClientPacket ret = packetQueue.poll(timeout, unit);
+                    if(ret instanceof PlayerDisconnectedItem) {
+                        throw new PlayerDisconnectedException(this);
+                    } else if(ret instanceof InterruptItem) {
+                        throw new InterruptedException();
+                    } else {
+                        return Optional.ofNullable(ret);
+                    }
+                }
+            } finally {
+                isWaitingForPacket = false;
+            }
         }
     }
 
@@ -172,63 +180,63 @@ public class Player {
         return isWaitingForPacket;
     }
 
-    public int getPlayerNum() {
+    public synchronized int getPlayerNum() {
         return playerNum;
     }
 
-    public void setPlayerNum(int playerNum) {
+    public synchronized void setPlayerNum(int playerNum) {
         this.playerNum = playerNum;
     }
 
-    public String getName() {
+    public synchronized String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public synchronized void setName(String name) {
         this.name = name;
     }
 
-    public boolean isHost() {
+    public synchronized boolean isHost() {
         return isHost;
     }
 
-    public void setHost(boolean host) {
+    public synchronized void setHost(boolean host) {
         this.isHost = host;
     }
 
-    public boolean socketIsConnected() {
+    public synchronized boolean socketIsConnected() {
         return socket.isConnected();
     }
 
-    public int getAccumulatedPoints() {
+    public synchronized int getAccumulatedPoints() {
         return accumulatedPoints + pointsOffset;
     }
 
-    public int getAccumulatedPointsNoOffset() {
+    public synchronized int getAccumulatedPointsNoOffset() {
         return accumulatedPoints;
     }
 
-    public void setAccumulatedPoints(int accumulatedPoints) {
+    public synchronized void setAccumulatedPoints(int accumulatedPoints) {
         this.accumulatedPoints = accumulatedPoints;
     }
 
-    public int getPointsOffset() {
+    public synchronized int getPointsOffset() {
         return pointsOffset;
     }
 
-    public void setPointsOffset(int pointsOffset) {
+    public synchronized void setPointsOffset(int pointsOffset) {
         this.pointsOffset = pointsOffset;
     }
 
-    public void incrementPointsOffset(int inc) {
+    public synchronized void incrementPointsOffset(int inc) {
         pointsOffset += inc;
     }
 
-    public void interruptPacketWaiting() {
+    public synchronized void interruptPacketWaiting() {
         packetQueue.add(new InterruptItem());
     }
 
-    public void dropConnection() {
+    public synchronized void dropConnection() {
         if(onDisconnectAction != null) {
             onDisconnectAction.action();
         }
@@ -236,7 +244,7 @@ public class Player {
         socket.dispose();
     }
 
-    public void clearPacketQueue() {
+    public synchronized void clearPacketQueue() {
         packetQueue.clear();
     }
 

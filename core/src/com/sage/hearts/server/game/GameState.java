@@ -4,25 +4,71 @@ import com.sage.hearts.utils.card.CardList;
 import com.sage.hearts.utils.card.Suit;
 import com.sage.hearts.utils.hearts.HeartsCard;
 
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class GameState {
-    public final ReentrantLock lock = new ReentrantLock();
-    public volatile boolean roundStarted = false;
+    public static final int NUM_PLAYERS_TO_START = 4;
 
-    public final PlayerList players = new PlayerList();
-    public final HashMap<Integer, Integer> warheadMap = new HashMap<>();
-    public final CardList<HeartsCard> pointCardsInTrick = new CardList<>();
-    public Player turnPlayer = null;
-    public Player leadingPlayer = null;
-    public Player startingPlayer = null;
-    public HeartsCard basePlay = null;
-    public int tricksPlayed = 0;
-    public int roundsPlayed = 0;
-    public boolean heartsBroke = false;
+    final PlayerList players = new PlayerList();
 
-    public void resetForNewRound() {
+    private boolean roundRunning = false;
+
+    final HashMap<Integer, Integer> warheadMap = new HashMap<>();
+    final CardList<HeartsCard> pointCardsInTrick = new CardList<>();
+    Player turnPlayer = null;
+    Player leadingPlayer = null;
+    Player startingPlayer = null;
+    HeartsCard basePlay = null;
+    int tricksPlayed = 0;
+    int roundsPlayed = 0;
+    boolean heartsBroke = false;
+
+    public synchronized void addPlayer(Player p) throws RoundIsRunningException {
+        if(roundRunning) {
+            throw new RoundIsRunningException();
+        }
+
+        players.add(p);
+    }
+
+    public synchronized boolean removePlayer(Player p) throws RoundIsRunningException {
+        if(roundRunning) {
+            throw new RoundIsRunningException();
+        }
+
+        return players.remove(p);
+    }
+
+    public synchronized PlayerList getPlayers() {
+        return new PlayerList(players);
+    }
+
+    public synchronized void shufflePlayers() throws RoundIsRunningException {
+        if(roundRunning) {
+            throw new RoundIsRunningException();
+        }
+
+        Collections.shuffle(players);
+    }
+
+    public synchronized boolean removeDisconnectedPlayers() {
+        if(roundRunning) {
+            return false;
+        }
+
+        boolean anyRemoved = players.removeIf(player -> !player.socketIsConnected());
+        if(anyRemoved) {
+            players.squashPlayerNums();
+        }
+        return anyRemoved;
+    }
+
+    synchronized void setRoundRunning(boolean roundRunning) {
+        this.roundRunning = roundRunning;
+    }
+
+    synchronized void resetForNewRound() {
         tricksPlayed = 0;
         roundsPlayed++;
         turnPlayer = null;
@@ -35,7 +81,7 @@ public class GameState {
         cycleWarheadMap();
     }
 
-    public void resetForNewTrick() {
+    void resetForNewTrick() {
         tricksPlayed++;
         pointCardsInTrick.clear();
         startingPlayer = turnPlayer = leadingPlayer;
@@ -43,7 +89,7 @@ public class GameState {
         basePlay = null;
     }
 
-    public void cycleWarheadMap() {
+    private void cycleWarheadMap() {
         if(warheadMap.isEmpty()) {
             warheadMap.put(0, 1);
             warheadMap.put(1, 2);
@@ -60,7 +106,7 @@ public class GameState {
         }
     }
 
-    public boolean isValidPlay(Player p, HeartsCard play) {
+    boolean isValidPlay(Player p, HeartsCard play) {
         if(play == null || p == null || !p.hand.contains(play.getRank(), play.getSuit())) {
             return false;
         } else if(tricksPlayed == 1 && play.getPoints() > 0 && p.hand.stream().anyMatch(c -> c.getPoints() == 0)) {
@@ -78,7 +124,13 @@ public class GameState {
         }
     }
 
-    public boolean areValidWarheads(Player p, CardList<HeartsCard> warheads) {
-        return true;
+    boolean areValidWarheads(Player p, CardList<HeartsCard> warheads) {
+        p.hand.forEach(c -> System.out.print(c.toString() + " "));
+        warheads.forEach(c -> System.out.print(c.toString() + " "));
+        return p.hand.toCardNumList().containsAll(warheads.toCardNumList());
+    }
+
+    public synchronized boolean isRoundRunning() {
+        return roundRunning;
     }
 }
