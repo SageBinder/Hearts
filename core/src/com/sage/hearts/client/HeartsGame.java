@@ -113,6 +113,8 @@ public class HeartsGame extends Game {
 
         if(!UPnP.isMappedTCP(server.port)) {
             successfullyOpenedServerPort = UPnP.openPortTCP(server.port);
+        } else {
+            successfullyOpenedServerPort = true;
         }
     }
 

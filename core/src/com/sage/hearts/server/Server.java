@@ -17,7 +17,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Server extends Thread {
-    public static final long PING_PERIOD = 1000; // In seconds
+    private static final long PRUNE_PERIOD = 1000; // In seconds
     public static final int MAX_PLAYER_NAME_LENGTH = 16;
 
     public final int port;
@@ -49,7 +49,7 @@ public class Server extends Thread {
         connectionAcceptorThread.start();
 
         Timer pruneDisconnectedPlayersTimer = new Timer();
-        pruneDisconnectedPlayersTimer.scheduleAtFixedRate(pruneDisconnectedPlayersTask, PING_PERIOD, PING_PERIOD);
+        pruneDisconnectedPlayersTimer.scheduleAtFixedRate(pruneDisconnectedPlayersTask, PRUNE_PERIOD, PRUNE_PERIOD);
 
         while(!closed) {
             if(startRoundFlag) {

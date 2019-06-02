@@ -255,6 +255,11 @@ public class GameScreen implements Screen, InputProcessor {
                 updateMessageLabelFromUI();
             });
             actionButton.setText("Send play");
+
+            if(gameState.thisPlayerHand.size() == 1) {
+                gameState.thisPlayerHand.get(0).setSelected(true);
+                actionButton.toggle();
+            }
             break;
 
         case SEND_WARHEADS:
