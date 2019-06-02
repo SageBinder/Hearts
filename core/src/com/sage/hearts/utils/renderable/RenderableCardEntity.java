@@ -43,9 +43,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     public final Color defaultFaceBackgroundColor = new Color(1, 1, 1, 1);
     public final Color defaultBackBackgroundColor = new Color(0, 0, 0, 1);
 
-    public final Color defaultFaceHighlightedBackgroundColor = new Color(1.0f, 1.0f, 0.5f, 1.0f);
-    public final Color defaultBackHighlightedBackgroundColor = new Color(defaultBackBackgroundColor);
-
     // Member variables:
     private int cornerRadiusInPixels = defaultCornerRadiusInPixels;
 
@@ -1109,8 +1106,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                 defaultBackBorderColor.equals(that.defaultBackBorderColor) &&
                 defaultFaceBackgroundColor.equals(that.defaultFaceBackgroundColor) &&
                 defaultBackBackgroundColor.equals(that.defaultBackBackgroundColor) &&
-                defaultFaceHighlightedBackgroundColor.equals(that.defaultFaceHighlightedBackgroundColor) &&
-                defaultBackHighlightedBackgroundColor.equals(that.defaultBackHighlightedBackgroundColor) &&
                 faceBorderColor.equals(that.faceBorderColor) &&
                 backBorderColor.equals(that.backBorderColor) &&
                 faceBackgroundColor.equals(that.faceBackgroundColor) &&
@@ -1136,8 +1131,6 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
                 defaultBackBorderColor,
                 defaultFaceBackgroundColor,
                 defaultBackBackgroundColor,
-                defaultFaceHighlightedBackgroundColor,
-                defaultBackHighlightedBackgroundColor,
                 cornerRadiusInPixels,
                 faceBorderThicknessInPixels,
                 backBorderThicknessInPixels,

@@ -99,6 +99,7 @@ public class GameState {
     private class Updater {
         private Map<Serializable, Serializable> data = null;
         private final CardList<RenderableHeartsCard> pointCardsInTrick = new CardList<>();
+
         private boolean update(ServerCode serverCode, Map<Serializable, Serializable> data) {
             if(serverCode != ServerCode.PING) {
                 lastServerCode = serverCode;
@@ -265,6 +266,7 @@ public class GameState {
             thisPlayer.setPlay(thisPlayerHand.getAndRemove(Rank.TWO, Suit.CLUBS)
                     .orElse(new RenderableHeartsCard(Rank.TWO, Suit.CLUBS)));
             thisPlayer.getPlay().ifPresent(play -> {
+                play.entity.setHighlighted(false);
                 play.entity.defaultFaceBackgroundColor.set(basePlayColor);
                 play.entity.resetFaceBackgroundColor();
             });

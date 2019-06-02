@@ -59,6 +59,9 @@ public class GameScreen implements Screen, InputProcessor {
 
     private boolean renderPlayers = true;
 
+    private float handHeightProportion = 1f / 7f;
+    private float expandedHandHeightProportion = 1f / 5f;
+
     public GameScreen(HeartsGame game) {
         this.game = game;
         this.gameState = game.getGameState();
@@ -138,7 +141,8 @@ public class GameScreen implements Screen, InputProcessor {
     public void show() {
         client = game.getClientConnection();
         inputProcessorsSetup();
-        updateUIFromGameState();
+        updateUiElementsFromGameState();
+        gameState.thisPlayerHand.prefDivisionProportion = 0.4f;
     }
 
     @Override
@@ -149,37 +153,15 @@ public class GameScreen implements Screen, InputProcessor {
 
         delayCounter += delta;
         if(delayCounter >= updateDelay && gameState.update(client)) {
-            updateUIFromGameState();
+            updateUiElementsFromGameState();
             delayCounter = 0;
         }
 
-        Arrays.stream(gameState.players).filter(Objects::nonNull).forEach(p -> p.setExpanded(false));
-        if(Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT)) {
-            Vector2 mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
-            outer:
-            for(RenderablePlayer p : gameState.players) {
-                if(p == null) {
-                    continue;
-                }
-
-                if((p.getPlay().isPresent() && p.getPlay().get().entity.displayRectContainsPoint(mousePos))) {
-                    p.setExpanded(true);
-                    break;
-                } else {
-                    for(var i = p.collectedPointCards.reverseListIterator(); i.hasPrevious(); ) {
-                        var entity = i.previous().entity;
-                        if(entity.displayRectContainsPoint(mousePos)) {
-                            p.setExpanded(true);
-                            break outer;
-                        }
-                    }
-                }
-            }
-        }
+        handleInputs();
 
         float playersCenterX = viewport.getWorldWidth() * 0.5f;
         float playersCenterY = viewport.getWorldHeight() * 0.66f;
-        var topPlayerIdx = (ArrayUtils.indexOf(gameState.players, gameState.thisPlayer) + (gameState.players.length / 2)) % gameState.players.length;
+        int topPlayerIdx = (ArrayUtils.indexOf(gameState.players, gameState.thisPlayer) + (gameState.players.length / 2)) % gameState.players.length;
         var topPlayer = gameState.players[Math.max(topPlayerIdx, 0)];
 
         uiTable.pack();
@@ -210,6 +192,30 @@ public class GameScreen implements Screen, InputProcessor {
         uiStage.draw();
     }
 
+    private void handleInputs() {
+        Arrays.stream(gameState.players).filter(Objects::nonNull).forEach(p -> p.setExpanded(false));
+
+        var hand = gameState.thisPlayerHand;
+        hand.cardHeightProportion = handHeightProportion;
+
+        if(Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT)) {
+            Vector2 mousePos = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+
+            if(hand.stream().anyMatch(c ->
+                    c.entity.displayRectContainsPoint(mousePos) || c.entity.baseRectContainsPoint(mousePos))) {
+                hand.cardHeightProportion = expandedHandHeightProportion;
+                return;
+            }
+
+            Arrays.stream(gameState.players)
+                    .filter(Objects::nonNull)
+                    .filter(p -> (p.getPlay().isPresent()
+                            && p.getPlay().get().entity.displayRectContainsPoint(mousePos))
+                            || p.collectedPointCards.stream().anyMatch(c -> c.entity.displayRectContainsPoint(mousePos)))
+                    .findFirst().ifPresent(p -> p.setExpanded(true));
+        }
+    }
+
     private void renderPlayers(float centerX, float centerY, float widthRadius, float heightRadius) {
         var players = gameState.players;
         float angleIncrement = MathUtils.PI2 / players.length;
@@ -230,14 +236,10 @@ public class GameScreen implements Screen, InputProcessor {
     private void updateCards(float delta) {
         gameState.thisPlayerHand.forEach(c -> c.entity.mover.posSpeed = 6);
         gameState.thisPlayerHand.update(delta);
-        for(RenderablePlayer p : gameState.players) {
-            if(p != null) {
-                p.update(delta);
-            }
-        }
+        Arrays.stream(gameState.players).filter(Objects::nonNull).forEach(p -> p.update(delta));
     }
 
-    private void updateUIFromGameState() {
+    private void updateUiElementsFromGameState() {
         updateMessageLabelFromUI();
         setActionButtonFromServerCode(gameState.lastServerCode);
     }
@@ -401,7 +403,8 @@ public class GameScreen implements Screen, InputProcessor {
         if(button == Input.Buttons.LEFT) {
             for(var i = gameState.thisPlayerHand.reverseListIterator(); i.hasPrevious(); ) {
                 var entity = i.previous().entity;
-                if(entity.displayRectContainsPoint(clickPos)) {
+                if(entity.displayRectContainsPoint(clickPos)
+                        || (entity.baseRectContainsPoint(clickPos) && !entity.isSelected())) {
                     entity.toggleSelected();
                     break;
                 }
@@ -422,6 +425,20 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
+        var newMousePos = viewport.unproject(new Vector2(screenX, screenY));
+
+        gameState.thisPlayerHand.forEach(c -> {
+            c.entity.setHighlightable(true);
+            c.entity.setHighlighted(false);
+        });
+        for(var i = gameState.thisPlayerHand.reverseListIterator(); i.hasPrevious(); ) {
+            var entity = i.previous().entity;
+            if(!entity.isSelected()
+                    && (entity.displayRectContainsPoint(newMousePos) || entity.baseRectContainsPoint(newMousePos))) {
+                entity.setHighlighted(true);
+                break;
+            }
+        }
         return false;
     }
 

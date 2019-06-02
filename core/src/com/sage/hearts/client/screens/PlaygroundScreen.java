@@ -5,34 +5,30 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.sage.hearts.client.HeartsGame;
-import com.sage.hearts.client.game.GameState;
 import com.sage.hearts.client.game.RenderableHeartsCard;
 import com.sage.hearts.utils.card.InvalidCardException;
 import com.sage.hearts.utils.card.Rank;
 import com.sage.hearts.utils.card.Suit;
 import com.sage.hearts.utils.renderable.RenderableCardEntity;
-import com.sage.hearts.utils.renderable.RenderableCardGroup;
+import com.sage.hearts.utils.renderable.RenderableHand;
 
 public class PlaygroundScreen implements Screen, InputProcessor {
     private HeartsGame game;
-    private GameState gameState;
 
     private Viewport viewport;
     private SpriteBatch batch;
 
     private RenderableHeartsCard test = new RenderableHeartsCard(Rank.QUEEN, Suit.SPADES);
-    private RenderableCardGroup<RenderableHeartsCard> cards = new RenderableCardGroup<>();
+    private RenderableHand<RenderableHeartsCard> cards = new RenderableHand<>();
 
     private int rotDirection = 1;
 
     public PlaygroundScreen(HeartsGame game) {
         this.game = game;
-        this.gameState = game.getGameState();
         viewport = new ExtendViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch = new SpriteBatch();
         test.entity().setOriginToCenter().setSelectable(true);
@@ -48,7 +44,6 @@ public class PlaygroundScreen implements Screen, InputProcessor {
         HeartsGame.clearScreen();
 
         test.entity().rotateDeg((delta * 360 / 10) * rotDirection);
-        cards.rotationRad += (MathUtils.PI2 * delta / 10f) * rotDirection;
         test.update(delta);
         cards.update(delta);
 
@@ -166,7 +161,8 @@ public class PlaygroundScreen implements Screen, InputProcessor {
         } else if(button == Input.Buttons.MIDDLE) {
             for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
                 var ce = i.previous().entity;
-                if(ce.displayRectContainsPoint(worldPos)) {
+                if(ce.displayRectContainsPoint(worldPos)
+                        || (ce.baseRectContainsPoint(worldPos) && !ce.isSelected())) {
                     ce.toggleSelected();
                     break;
                 }
@@ -194,15 +190,20 @@ public class PlaygroundScreen implements Screen, InputProcessor {
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
-//        var worldPos = viewport.unproject(new Vector2(screenX, screenY));
-//        cards.forEach(c -> c.entity.deselect());
-//        for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
-//            var entity = i.previous().entity();
-//            if(entity.displayRectContainsPoint(worldPos) || entity.baseRectContainsPoint(worldPos)) {
-//                entity.setSelected(true);
-//                break;
-//            }
-//        }
+        var newMousePos = viewport.unproject(new Vector2(screenX, screenY));
+
+        cards.forEach(c -> {
+            c.entity.setHighlightable(true);
+            c.entity.setHighlighted(false);
+        });
+        for(var i = cards.reverseListIterator(); i.hasPrevious(); ) {
+            var entity = i.previous().entity;
+            if(!entity.isSelected()
+                    && (entity.displayRectContainsPoint(newMousePos) || entity.baseRectContainsPoint(newMousePos))) {
+                entity.setHighlighted(true);
+                break;
+            }
+        }
         return false;
     }
 

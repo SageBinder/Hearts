@@ -59,20 +59,35 @@ public class RenderableHeartsCard extends HeartsCard
     }
 
     public class RenderableHeartsCardEntity extends RenderableCardEntity<RenderableHeartsCardEntity, RenderableHeartsCard> {
+        // On select
         public final float defaultProportionalYChangeOnSelect = 0.9f; // Proportional to height
         public final float defaultProportionalXChangeOnSelect = 0.05f; // Proportional to width
 
         public final Color defaultFaceSelectedBackgroundColor = new Color(defaultFaceBackgroundColor).sub(0.5f, 0.5f, 0.5f, 0);
         public final Color defaultBackSelectedBackgroundColor = new Color(defaultBackBackgroundColor);
 
-        public final Color defaultPointCardFaceBorderColor = new Color(0.75f, 0.75f, 0f, 1f);
-        public final Color defaultPointCardBackBorderColor = new Color(defaultPointCardFaceBorderColor);
+        private boolean selectable = true;
+        private boolean isSelected = false;
 
         private float proportionalXChangeOnSelect = defaultProportionalXChangeOnSelect;
         private float proportionalYChangeOnSelect = defaultProportionalYChangeOnSelect;
 
-        private boolean selectable = true;
-        private boolean isSelected = false;
+        // On highlight:
+        public final float defaultProportionalYChangeOnHighlight = 0.45f;
+        public final float defaultProportionalXChangeOnHighlight = 0.05f;
+
+        public final Color defaultFaceHighlightedBackgroundColor = new Color(1.0f, 1.0f, 0.5f, 1.0f);
+        public final Color defaultBackHighlightedBackgroundColor = new Color(defaultBackBackgroundColor);
+
+        public final float proportionalYChangeOnHighlight = defaultProportionalYChangeOnHighlight;
+        public final float proportionalXChangeOnHighlight = defaultProportionalXChangeOnHighlight;
+
+        private boolean highlightable = false;
+        private boolean isHighlighted = false;
+
+        // Other:
+        public final Color defaultPointCardFaceBorderColor = new Color(0.75f, 0.75f, 0f, 1f);
+        public final Color defaultPointCardBackBorderColor = new Color(defaultPointCardFaceBorderColor);
 
         private RenderableHeartsCardEntity(RenderableHeartsCard other) {
             super(other);
@@ -102,7 +117,6 @@ public class RenderableHeartsCard extends HeartsCard
             }
             return this;
         }
-
         public RenderableHeartsCardEntity setAbsoluteYChangeOnSelect(float absoluteYChangeOnSelect) {
             setProportionalYChangeOnSelect(absoluteYChangeOnSelect / getHeight());
             return this;
@@ -121,12 +135,12 @@ public class RenderableHeartsCard extends HeartsCard
             return this;
         }
 
+
         // Selected setters:
         public RenderableHeartsCardEntity select() {
             setSelected(true);
             return this;
         }
-
         public RenderableHeartsCardEntity deselect() {
             setSelected(false);
             return this;
@@ -165,9 +179,60 @@ public class RenderableHeartsCard extends HeartsCard
         public boolean isSelected() {
             return isSelected;
         }
-
         public boolean isSelectable() {
             return selectable;
+        }
+
+        // Position change on highlight methods:
+        public float getProportionalYChangeOnHighlight() {
+            return proportionalYChangeOnHighlight;
+        }
+
+        public float getProportionalXChangeOnHighlight() {
+            return proportionalXChangeOnHighlight;
+        }
+
+        // Highlight setters:
+        public RenderableHeartsCardEntity setHighlightable(boolean highlightable) {
+            this.highlightable = highlightable;
+            return this;
+        }
+
+        public RenderableHeartsCardEntity highlight() {
+            return setHighlighted(true);
+        }
+
+        public RenderableHeartsCardEntity toggleHighlighted() {
+            return setHighlighted(!isHighlighted);
+        }
+
+        public RenderableHeartsCardEntity setHighlighted(boolean highlighted) {
+            if(isHighlighted == highlighted || !highlightable || isSelected) {
+                return this;
+            } else {
+                isHighlighted = highlighted;
+                if(isHighlighted) {
+                    setFaceBackgroundColor(defaultFaceHighlightedBackgroundColor);
+                    setBackBackgroundColor(defaultBackHighlightedBackgroundColor);
+                    mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnHighlight);
+                    mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnHighlight);
+                } else {
+                    setFaceBackgroundColor(defaultFaceBackgroundColor);
+                    setBackBackgroundColor(defaultBackBackgroundColor);
+                    mover.setTargetDisplayProportionalXOffset(0);
+                    mover.setTargetDisplayProportionalYOffset(0);
+                }
+                return this;
+            }
+        }
+
+        // Highlight getters:
+        public boolean isHighlightable() {
+            return highlightable;
+        }
+
+        public boolean isHighlighted() {
+            return isHighlighted;
         }
     }
 }
