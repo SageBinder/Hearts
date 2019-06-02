@@ -2,6 +2,7 @@ package com.sage.hearts.client.screens;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -36,6 +37,7 @@ public class LobbyScreen implements Screen, InputProcessor {
     private GameState gameState;
     private ClientConnection client;
 
+    private SpriteBatch batch = new SpriteBatch();
     private Viewport viewport;
     private float textProportion = 1 / 7f;
     private float viewportScale = 5f;
@@ -155,7 +157,7 @@ public class LobbyScreen implements Screen, InputProcessor {
         table.row();
         table.add(gameStateMessageLabel).width(viewport.getWorldWidth() * 0.8f);
 
-        stage = new Stage(viewport);
+        stage = new Stage(viewport, batch);
         stage.addActor(table);
     }
 
@@ -195,13 +197,15 @@ public class LobbyScreen implements Screen, InputProcessor {
 
     @Override
     public void render(float delta) {
-        HeartsGame.clearScreen();
-
         if(gameState.update(client)) {
             updateUIFromGameState();
         }
-
         stage.act(delta);
+
+        batch.begin();
+        HeartsGame.clearScreen(batch, viewport);
+        batch.end();
+
         stage.draw();
     }
 
@@ -379,6 +383,7 @@ public class LobbyScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
+        batch.dispose();
         fontGenerator.dispose();
     }
 

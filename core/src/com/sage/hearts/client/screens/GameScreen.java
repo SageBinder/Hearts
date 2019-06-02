@@ -175,9 +175,9 @@ public class GameScreen implements Screen, InputProcessor {
         updateCards(delta);
 
         // Render:
-        HeartsGame.clearScreen();
-
         batch.begin();
+        HeartsGame.clearScreen(batch, viewport);
+
         if(renderPlayers) {
             renderPlayers(playersCenterX, playersCenterY,
                     viewport.getWorldWidth() * 0.3f,viewport.getWorldHeight() * 0.22f);
@@ -353,7 +353,8 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
-
+        batch.dispose();
+        fontGenerator.dispose();
     }
 
     @Override

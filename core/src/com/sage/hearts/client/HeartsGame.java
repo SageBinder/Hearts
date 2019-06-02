@@ -5,7 +5,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.dosse.upnp.UPnP;
 import com.sage.hearts.client.game.GameState;
 import com.sage.hearts.client.network.ClientCode;
@@ -17,7 +20,8 @@ import com.sage.hearts.server.Server;
 import java.io.IOException;
 
 public class HeartsGame extends Game {
-    public static final Color BACKGROUND_COLOR = new Color(0, 0.2f, 0.11f, 1);
+    private static final Color BACKGROUND_COLOR = new Color(0, 0.2f, 0.11f, 1);
+    private static Texture backgroundTexture;
 
     private GameState gameState;
     private ClientConnection clientConnection;
@@ -35,6 +39,8 @@ public class HeartsGame extends Game {
 
     @Override
     public void create() {
+        backgroundTexture = new Texture(Gdx.files.internal("background.jpg"));
+
         Gdx.graphics.setTitle("❤️❤️❤️");
         titleTimer = new Timer();
         titleTimer.scheduleTask(new Timer.Task() {
@@ -85,6 +91,10 @@ public class HeartsGame extends Game {
 
     public void showPlaygroundScreen() {
         setScreen(playgroundScreen);
+    }
+
+    public Texture getFeltBackgroundTexture() {
+        return backgroundTexture;
     }
 
     public void joinGame(String serverIP, int port, String name) {
@@ -158,7 +168,7 @@ public class HeartsGame extends Game {
         closeGameServer();
     }
 
-    public static void clearScreen() {
+    public static void clearScreen(SpriteBatch spriteBatch, Viewport viewport) {
         Gdx.gl.glClearColor(HeartsGame.BACKGROUND_COLOR.r,
                 HeartsGame.BACKGROUND_COLOR.g,
                 HeartsGame.BACKGROUND_COLOR.b,
@@ -166,5 +176,6 @@ public class HeartsGame extends Game {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT
                 | GL20.GL_DEPTH_BUFFER_BIT
                 | (Gdx.graphics.getBufferFormat().coverageSampling ? GL20.GL_COVERAGE_BUFFER_BIT_NV : 0));
+        spriteBatch.draw(backgroundTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
     }
 }

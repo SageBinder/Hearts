@@ -41,7 +41,6 @@ public class PlaygroundScreen implements Screen, InputProcessor {
 
     @Override
     public void render(float delta) {
-        HeartsGame.clearScreen();
 
         test.entity().rotateDeg((delta * 360 / 10) * rotDirection);
         test.update(delta);
@@ -51,6 +50,7 @@ public class PlaygroundScreen implements Screen, InputProcessor {
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
         batch.begin();
+        HeartsGame.clearScreen(batch, viewport);
         cards.render(batch, viewport);
         test.render(batch, viewport);
         batch.end();
@@ -85,7 +85,7 @@ public class PlaygroundScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
-
+        batch.dispose();
     }
 
     @Override

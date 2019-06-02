@@ -1,6 +1,7 @@
 package com.sage.hearts.client.screens;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -19,6 +20,7 @@ public class StartScreen implements Screen, InputProcessor {
     private HeartsGame game;
     private GameState gameState;
 
+    private SpriteBatch batch = new SpriteBatch();
     private Viewport viewport;
     private float viewportScale = 5f;
     private float textProportion = 1f / 7f;
@@ -124,7 +126,7 @@ public class StartScreen implements Screen, InputProcessor {
         table.row().padTop(viewport.getWorldHeight() * 0.1f);
         table.add(gameStateMessageLabel).width(viewport.getWorldWidth() * 0.8f);
 
-        stage = new Stage(viewport);
+        stage = new Stage(viewport, batch);
         stage.addActor(table);
     }
 
@@ -143,7 +145,9 @@ public class StartScreen implements Screen, InputProcessor {
 
     @Override
     public void render(float delta) {
-        HeartsGame.clearScreen();
+        batch.begin();
+        HeartsGame.clearScreen(batch, viewport);
+        batch.end();
 
         gameStateMessageLabel.setText(gameState.message);
         stage.act(delta);
@@ -173,6 +177,7 @@ public class StartScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
+        batch.dispose();
         fontGenerator.dispose();
     }
 

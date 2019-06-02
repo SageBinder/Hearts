@@ -3,6 +3,7 @@ package com.sage.hearts.client.screens;
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -23,6 +24,7 @@ import java.net.URL;
 public class CreateGameScreen implements Screen, InputProcessor {
     private HeartsGame game;
 
+    private SpriteBatch batch = new SpriteBatch();
     private Viewport viewport;
     private float viewportScale = 5f;
     private float textProportion = 1f / 7f;
@@ -189,7 +191,7 @@ public class CreateGameScreen implements Screen, InputProcessor {
         table.row().padTop(viewport.getWorldHeight() * 0.05f).fillX();
         table.add(createGameButton).maxWidth(viewport.getWorldWidth() * 0.3f).prefWidth(viewport.getWorldWidth() * 0.3f);
 
-        stage = new Stage(viewport);
+        stage = new Stage(viewport, batch);
         stage.addActor(table);
     }
 
@@ -207,7 +209,9 @@ public class CreateGameScreen implements Screen, InputProcessor {
 
     @Override
     public void render(float delta) {
-        HeartsGame.clearScreen();
+        batch.begin();
+        HeartsGame.clearScreen(batch, viewport);
+        batch.end();
 
         stage.act(delta);
         stage.draw();
@@ -236,6 +240,7 @@ public class CreateGameScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
+        batch.dispose();
         fontGenerator.dispose();
     }
 
