@@ -16,6 +16,7 @@ import com.sage.hearts.client.network.ClientConnection;
 import com.sage.hearts.client.network.ClientPacket;
 import com.sage.hearts.client.screens.*;
 import com.sage.hearts.server.Server;
+import com.sage.hearts.utils.renderable.RenderableCardEntity;
 
 import java.io.IOException;
 
@@ -70,6 +71,8 @@ public class HeartsGame extends Game {
     }
 
     public void showStartScreen() {
+        RenderableCardEntity.disposeAllEntities();
+
         setScreen(startScreen);
     }
 

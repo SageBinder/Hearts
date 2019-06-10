@@ -776,7 +776,7 @@ public class RenderableCardEntity<T extends RenderableCardEntity, CardT extends 
     }
 
     public static void disposeAllEntities() {
-        allEntities.forEach(RenderableCardEntity::dispose);
+        new ArrayList<>(allEntities).forEach(RenderableCardEntity::dispose);
     }
 
     public static boolean entityIsDisposed(RenderableCardEntity entity) {

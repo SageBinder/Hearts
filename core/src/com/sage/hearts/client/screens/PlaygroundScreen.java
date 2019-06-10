@@ -90,6 +90,45 @@ public class PlaygroundScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
+        switch(keycode) {
+        case Input.Keys.TAB:
+            cards.forEach(c -> c.entity.setHighlighted(false));
+            break;
+
+        case Input.Keys.LEFT:
+        case Input.Keys.RIGHT:
+            if(cards.isEmpty()) {
+                break;
+            }
+
+            var highlighted = cards.stream().filter(c -> c.entity.isHighlighted()).findAny();
+            if(highlighted.isPresent()) {
+                var highlightedCard = highlighted.get();
+                int nextHighlightIdx = (cards.indexOf(highlightedCard)
+                        + (keycode == Input.Keys.RIGHT ? 1 : -1)) % cards.size();
+                if(nextHighlightIdx < 0) {
+                    nextHighlightIdx = cards.size() - 1;
+                }
+
+                cards.forEach(c -> c.entity.setHighlighted(false));
+                cards.forEach(c -> c.entity.resetBothBorderColors());
+                cards.get(nextHighlightIdx).entity.setHighlighted(true);
+            } else {
+                if(keycode == Input.Keys.LEFT) {
+                    cards.get(cards.size() - 1).entity.setHighlighted(true);
+                } else {
+                    cards.get(0).entity.setHighlighted(true);
+                }
+            }
+            break;
+
+        case Input.Keys.SPACE:
+            cards.stream()
+                    .filter(c -> c.entity.isHighlighted())
+                    .findAny().ifPresent(c -> c.entity.toggleSelected());
+            break;
+        }
+        
         if(keycode == Input.Keys.ESCAPE) {
             cards.disposeAll();
             cards.clear();

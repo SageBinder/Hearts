@@ -60,8 +60,8 @@ public class RenderableHeartsCard extends HeartsCard
 
     public class RenderableHeartsCardEntity extends RenderableCardEntity<RenderableHeartsCardEntity, RenderableHeartsCard> {
         // On select
-        public final float defaultProportionalYChangeOnSelect = 0.9f; // Proportional to height
-        public final float defaultProportionalXChangeOnSelect = 0.05f; // Proportional to width
+        public float defaultProportionalYChangeOnSelect = 0.9f; // Proportional to height
+        public float defaultProportionalXChangeOnSelect = 0.05f; // Proportional to width
 
         public final Color defaultFaceSelectedBackgroundColor = new Color(defaultFaceBackgroundColor).sub(0.5f, 0.5f, 0.5f, 0);
         public final Color defaultBackSelectedBackgroundColor = new Color(defaultBackBackgroundColor);
@@ -73,20 +73,25 @@ public class RenderableHeartsCard extends HeartsCard
         private float proportionalYChangeOnSelect = defaultProportionalYChangeOnSelect;
 
         // On highlight:
-        public final float defaultProportionalYChangeOnHighlight = 0.45f;
-        public final float defaultProportionalXChangeOnHighlight = 0.05f;
+        public float defaultProportionalYChangeOnHighlight = 0.45f;
+        public float defaultProportionalXChangeOnHighlight = 0.05f;
 
-        public final Color defaultFaceHighlightedBackgroundColor = new Color(1.0f, 1.0f, 0.5f, 1.0f);
+        public final Color defaultFaceHighlightedBackgroundColor = new Color(1.0f, 1.0f, 0.5f, 1f);
         public final Color defaultBackHighlightedBackgroundColor = new Color(defaultBackBackgroundColor);
 
-        public final float proportionalYChangeOnHighlight = defaultProportionalYChangeOnHighlight;
-        public final float proportionalXChangeOnHighlight = defaultProportionalXChangeOnHighlight;
+        public final Color defaultFaceHighlightedBorderColor = new Color(Color.CYAN);
+        public final Color defaultBackHighlightedBorderColor = new Color(Color.CYAN);
+
+        public float proportionalYChangeOnHighlight = defaultProportionalYChangeOnHighlight;
+        public float proportionalXChangeOnHighlight = defaultProportionalXChangeOnHighlight;
 
         private boolean highlightable = false;
         private boolean isHighlighted = false;
 
         // Other:
-        public final Color defaultPointCardFaceBorderColor = new Color(0.75f, 0.75f, 0f, 1f);
+        // HOLY MOTHERFUCKING CHRIST, IF THIS COLOR IS 0.75f, 0.75f, 0, 1, IT APPARENTLY CAUSES A HASH COLLISION WITH
+        // THE THE POINT BORDER COLOR. THAT'S WHY I'VE MADE IT 0.76f AND NOT 0.75f. FUCK.
+        public final Color defaultPointCardFaceBorderColor = new Color(0.76f, 0.75f, 0f, 1f);
         public final Color defaultPointCardBackBorderColor = new Color(defaultPointCardFaceBorderColor);
 
         private RenderableHeartsCardEntity(RenderableHeartsCard other) {
@@ -100,12 +105,69 @@ public class RenderableHeartsCard extends HeartsCard
         }
 
         private void setBorderColorIfPointCard() {
-            if(card.getPoints() > 0) {
+            if(getPoints() > 0) {
                 setFaceBorderColor(defaultPointCardFaceBorderColor);
                 setBackBorderColor(defaultPointCardBackBorderColor);
             } else {
                 setFaceBorderColor(defaultFaceBorderColor);
                 setBackBorderColor(defaultBackBorderColor);
+            }
+        }
+
+        @Override
+        public RenderableHeartsCardEntity resetFaceBorderColor() {
+            if(isHighlighted) {
+                return super.setFaceBorderColor(defaultFaceHighlightedBorderColor);
+            } else if(getPoints() > 0) {
+                return super.setFaceBorderColor(defaultPointCardFaceBorderColor);
+            } else {
+                return super.resetFaceBorderColor();
+            }
+        }
+
+        @Override
+        public RenderableHeartsCardEntity resetBackBorderColor() {
+            if(isHighlighted) {
+                return super.setBackBorderColor(defaultBackHighlightedBorderColor);
+            } else if(getPoints() > 0) {
+                return super.setBackBorderColor(defaultPointCardBackBorderColor);
+            } else {
+                return super.resetBackBorderColor();
+            }
+        }
+
+        @Override
+        public RenderableHeartsCardEntity resetFaceBackgroundColor() {
+            if(isSelected) {
+                return super.setFaceBackgroundColor(defaultFaceSelectedBackgroundColor);
+            } else if(isHighlighted) {
+                return super.setFaceBackgroundColor(defaultFaceHighlightedBackgroundColor);
+            } else {
+                return super.resetFaceBackgroundColor();
+            }
+        }
+
+        @Override
+        public RenderableHeartsCardEntity resetBackBackgroundColor() {
+            if(isSelected) {
+                return super.setBackBackgroundColor(defaultBackSelectedBackgroundColor);
+            } else if(isHighlighted) {
+                return super.setBackBackgroundColor(defaultBackHighlightedBackgroundColor);
+            } else {
+                return super.resetBackBackgroundColor();
+            }
+        }
+
+        private void resetTargetDisplayProportionOffset() {
+            if(isSelected) {
+                mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnSelect);
+                mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnSelect);
+            } else if(isHighlighted) {
+                mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnHighlight);
+                mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnHighlight);
+            } else {
+                mover.setTargetDisplayProportionalXOffset(0);
+                mover.setTargetDisplayProportionalYOffset(0);
             }
         }
 
@@ -155,17 +217,9 @@ public class RenderableHeartsCard extends HeartsCard
                 return this;
             } else {
                 isSelected = selected;
-                if(isSelected) {
-                    setFaceBackgroundColor(defaultFaceSelectedBackgroundColor);
-                    setBackBackgroundColor(defaultBackSelectedBackgroundColor);
-                    mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnSelect);
-                    mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnSelect);
-                } else {
-                    setFaceBackgroundColor(defaultFaceBackgroundColor);
-                    setBackBackgroundColor(defaultBackBackgroundColor);
-                    mover.setTargetDisplayProportionalXOffset(0);
-                    mover.setTargetDisplayProportionalYOffset(0);
-                }
+                resetTargetDisplayProportionOffset();
+                resetBothBackgroundColors();
+                resetBothBorderColors();
                 return this;
             }
         }
@@ -207,21 +261,13 @@ public class RenderableHeartsCard extends HeartsCard
         }
 
         public RenderableHeartsCardEntity setHighlighted(boolean highlighted) {
-            if(isHighlighted == highlighted || !highlightable || isSelected) {
+            if(isHighlighted == highlighted || !highlightable) {
                 return this;
             } else {
                 isHighlighted = highlighted;
-                if(isHighlighted) {
-                    setFaceBackgroundColor(defaultFaceHighlightedBackgroundColor);
-                    setBackBackgroundColor(defaultBackHighlightedBackgroundColor);
-                    mover.setTargetDisplayProportionalXOffset(proportionalXChangeOnHighlight);
-                    mover.setTargetDisplayProportionalYOffset(proportionalYChangeOnHighlight);
-                } else {
-                    setFaceBackgroundColor(defaultFaceBackgroundColor);
-                    setBackBackgroundColor(defaultBackBackgroundColor);
-                    mover.setTargetDisplayProportionalXOffset(0);
-                    mover.setTargetDisplayProportionalYOffset(0);
-                }
+                resetTargetDisplayProportionOffset();
+                resetBothBackgroundColors();
+                resetBothBorderColors();
                 return this;
             }
         }

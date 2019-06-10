@@ -62,6 +62,8 @@ public class GameScreen implements Screen, InputProcessor {
     private float handHeightProportion = 1f / 7f;
     private float expandedHandHeightProportion = 1f / 5f;
 
+    private boolean mouseControl = true;
+
     public GameScreen(HeartsGame game) {
         this.game = game;
         this.gameState = game.getGameState();
@@ -359,7 +361,12 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
-        if(keycode == Input.Keys.ESCAPE) {
+        switch(keycode) {
+        case Input.Keys.TAB:
+            gameState.thisPlayerHand.forEach(c -> c.entity.setHighlighted(false));
+            break;
+
+        case Input.Keys.ESCAPE:
             if(!quitConfirmationFlag) {
                 quitConfirmationText = "Press ESC again to leave the game";
                 quitConfirmationFlag = true;
@@ -376,7 +383,42 @@ public class GameScreen implements Screen, InputProcessor {
                 gameState.message = "You left the game";
                 game.showStartScreen();
             }
+            break;
+
+        case Input.Keys.LEFT:
+        case Input.Keys.RIGHT:
+            if(gameState.thisPlayerHand.isEmpty()) {
+                break;
+            }
+
+            var highlighted = gameState.thisPlayerHand.stream().filter(c -> c.entity.isHighlighted()).findAny();
+            if(highlighted.isPresent()) {
+                var highlightedCard = highlighted.get();
+                int nextHighlightIdx = (gameState.thisPlayerHand.indexOf(highlightedCard)
+                        + (keycode == Input.Keys.RIGHT ? 1 : -1)) % gameState.thisPlayerHand.size();
+                if(nextHighlightIdx < 0) {
+                    nextHighlightIdx = gameState.thisPlayerHand.size() - 1;
+                }
+
+                gameState.thisPlayerHand.forEach(c -> c.entity.setHighlighted(false));
+                gameState.thisPlayerHand.get(nextHighlightIdx).entity.setHighlighted(true);
+            } else {
+                if(keycode == Input.Keys.LEFT) {
+                    gameState.thisPlayerHand.get(gameState.thisPlayerHand.size() - 1).entity.setHighlighted(true);
+                } else {
+                    gameState.thisPlayerHand.get(0).entity.setHighlighted(true);
+                }
+            }
+            mouseControl = false;
+            break;
+
+        case Input.Keys.SPACE:
+            gameState.thisPlayerHand.stream()
+                    .filter(c -> c.entity.isHighlighted())
+                    .findAny().ifPresent(c -> c.entity.toggleSelected());
+            break;
         }
+
         return false;
     }
 
@@ -402,6 +444,9 @@ public class GameScreen implements Screen, InputProcessor {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         var clickPos = viewport.unproject(new Vector2(screenX, screenY));
         if(button == Input.Buttons.LEFT) {
+            mouseControl = true;
+            gameState.thisPlayerHand.forEach(c -> c.entity.setHighlighted(false));
+
             for(var i = gameState.thisPlayerHand.reverseListIterator(); i.hasPrevious(); ) {
                 var entity = i.previous().entity;
                 if(entity.displayRectContainsPoint(clickPos)
@@ -426,18 +471,20 @@ public class GameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
-        var newMousePos = viewport.unproject(new Vector2(screenX, screenY));
+        if(mouseControl) {
+            var newMousePos = viewport.unproject(new Vector2(screenX, screenY));
 
-        gameState.thisPlayerHand.forEach(c -> {
-            c.entity.setHighlightable(true);
-            c.entity.setHighlighted(false);
-        });
-        for(var i = gameState.thisPlayerHand.reverseListIterator(); i.hasPrevious(); ) {
-            var entity = i.previous().entity;
-            if(!entity.isSelected()
-                    && (entity.displayRectContainsPoint(newMousePos) || entity.baseRectContainsPoint(newMousePos))) {
-                entity.setHighlighted(true);
-                break;
+            gameState.thisPlayerHand.forEach(c -> {
+                c.entity.setHighlightable(true);
+                c.entity.setHighlighted(false);
+            });
+            for(var i = gameState.thisPlayerHand.reverseListIterator(); i.hasPrevious(); ) {
+                var entity = i.previous().entity;
+                if(!entity.isSelected()
+                        && (entity.displayRectContainsPoint(newMousePos) || entity.baseRectContainsPoint(newMousePos))) {
+                    entity.setHighlighted(true);
+                    break;
+                }
             }
         }
         return false;
