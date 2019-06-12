@@ -279,7 +279,9 @@ public class GameState {
         }
 
         private void invalidPlay() {
-            message = "Error: invalid play. Try again.";
+            message = "[YELLOW]Invalid play - "
+                    + Optional.ofNullable(data.get("message")).orElse("(no message received from server)")
+                    + "[]";
             if(thisPlayer.getPlay().isPresent()) {
                 thisPlayer.getPlay().get().setSelected(true).setSelectable(true);
                 thisPlayerHand.add(thisPlayer.getPlay().get());
@@ -569,7 +571,11 @@ public class GameState {
                     message = "There was an error while trying to contact the server... try again";
                     return;
                 }
-                card.setSelected(false).setSelectable(false);
+                card.entity
+                        .setSelected(false)
+                        .setSelectable(false)
+                        .setHighlighted(false)
+                        .setHighlightable(false);
                 thisPlayerHand.remove(card);
                 thisPlayer.setPlay(card);
                 message = "Sending play...";

@@ -106,21 +106,33 @@ public class GameState {
         }
     }
 
-    boolean isValidPlay(Player p, HeartsCard play) {
-        if(play == null || p == null || !p.hand.contains(play.getRank(), play.getSuit())) {
-            return false;
+    PlayValidityResult isValidPlay(Player p, HeartsCard play) {
+        if(play == null) {
+            return new PlayValidityResult(false, "Play was null (THIS IS BAD)");
+        } else if(p == null) {
+            return new PlayValidityResult(false, "Player was null (THIS IS BAD)");
+        } else if(!p.hand.contains(play.getRank(), play.getSuit())) {
+            return new PlayValidityResult(false, "Hand did not contain card (THIS IS BAD)");
         } else if(tricksPlayed == 1 && play.getPoints() > 0 && p.hand.stream().anyMatch(c -> c.getPoints() == 0)) {
-            return false;
+            return new PlayValidityResult(false, "You cannot play points on the first round");
         } else if(basePlay == null) {
-            return play.getSuit() != Suit.HEARTS || p.hand.stream().allMatch(c -> c.getSuit() == Suit.HEARTS) || heartsBroke;
-        } else if(play.getSuit() != basePlay.getSuit()) {
-            boolean isValid = !p.hand.containsAnySuit(basePlay.getSuit());
-            if(isValid && play.getSuit() == Suit.HEARTS) {
-                heartsBroke = true;
+            if(play.getSuit() != Suit.HEARTS
+                    || p.hand.stream().allMatch(c -> c.getSuit() == Suit.HEARTS)
+                    || heartsBroke) {
+                return new PlayValidityResult(true, "");
+            } else {
+                return new PlayValidityResult(false, "Hearts has not been broken yet");
             }
-            return isValid;
+        } else if(play.getSuit() != basePlay.getSuit()) {
+            if(!p.hand.containsAnySuit(basePlay.getSuit())) {
+                heartsBroke = play.getSuit() == Suit.HEARTS;
+                return new PlayValidityResult(true, "");
+            } else {
+                return new PlayValidityResult(false,
+                        "You still have " + basePlay.getSuit().toString() + " in your hand");
+            }
         } else {
-            return true;
+            return new PlayValidityResult(true, "");
         }
     }
 

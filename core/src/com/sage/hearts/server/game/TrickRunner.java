@@ -119,11 +119,16 @@ class TrickRunner {
                 continue;
             }
 
-            if(gameState.isValidPlay(gameState.turnPlayer, play)) {
-                gameState.turnPlayer.sendPacket(new ServerPacket(ServerCode.SUCCESSFUL_PLAY));
+            PlayValidityResult validityResult;
+            if((validityResult = gameState.isValidPlay(gameState.turnPlayer, play)).isValid) {
+                var successfulPlayServerPacket = new ServerPacket(ServerCode.SUCCESSFUL_PLAY);
+                successfulPlayServerPacket.data.put("message", validityResult.message);
+                gameState.turnPlayer.sendPacket(successfulPlayServerPacket);
                 return play;
             } else {
-                gameState.turnPlayer.sendPacket(new ServerPacket(ServerCode.INVALID_PLAY));
+                var invalidPlayServerPacket = new ServerPacket(ServerCode.INVALID_PLAY);
+                invalidPlayServerPacket.data.put("message", validityResult.message);
+                gameState.turnPlayer.sendPacket(invalidPlayServerPacket);
             }
         }
     }
