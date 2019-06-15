@@ -182,7 +182,7 @@ public class GameScreen implements Screen, InputProcessor {
 
         if(renderPlayers) {
             renderPlayers(playersCenterX, playersCenterY,
-                    viewport.getWorldWidth() * 0.3f,viewport.getWorldHeight() * 0.22f);
+                    viewport.getWorldWidth() * 0.35f,viewport.getWorldHeight() * 0.22f);
         }
         gameState.thisPlayerHand.render(batch, viewport);
         quitConfirmationFont.draw(batch, quitConfirmationText,
@@ -401,13 +401,10 @@ public class GameScreen implements Screen, InputProcessor {
                 }
 
                 gameState.thisPlayerHand.forEach(c -> c.entity.setHighlighted(false));
-                gameState.thisPlayerHand.get(nextHighlightIdx).entity.setHighlighted(true);
+                gameState.thisPlayerHand.get(nextHighlightIdx).entity.setHighlightable(true).setHighlighted(true);
             } else {
-                if(keycode == Input.Keys.LEFT) {
-                    gameState.thisPlayerHand.get(gameState.thisPlayerHand.size() - 1).entity.setHighlighted(true);
-                } else {
-                    gameState.thisPlayerHand.get(0).entity.setHighlighted(true);
-                }
+                gameState.thisPlayerHand.get(keycode == Input.Keys.RIGHT ? 0 : gameState.thisPlayerHand.size() - 1)
+                        .entity.setHighlightable(true).setHighlighted(true);
             }
             mouseControl = false;
             break;
